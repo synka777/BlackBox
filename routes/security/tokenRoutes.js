@@ -1,14 +1,14 @@
-const express = require("express");
+const express = require("express")
 const router = express.Router()
-const baseController = require("../../controllers/baseController");
+const baseController = require("../../controllers/baseController")
 const utils = require('../../kernel/utils.js')
 
 const jwt = require('jsonwebtoken')
 const jwtExpirySeconds = 9000
 
-router.post('/login', (req, res) => {
-    const { admUsername, admPasswd} = utils.defaultAdmin;
-    const { username, password} = req.body;
+router.post('/generate', (req, res) => {
+    const { admUsername, admPasswd} = utils.defaultAdmin
+    const { username, password} = req.body
     if(username == admUsername && password == admPasswd){
         const token = jwt.sign({ username }, utils.jwtKey, {
             algorithm: 'HS256',

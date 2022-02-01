@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 const jwt = require('jsonwebtoken')
 const baseController = require('../controllers/baseController')
 
@@ -20,15 +20,15 @@ module.exports.verifyToken = (res, token) => {
 }
 
 module.exports.getModelProperties = (modelName, exclusions) => {
-	const newModel = mongoose.model(modelName);
-	let properties = [];
+	const newModel = mongoose.model(modelName)
+	let properties = []
 	newModel.schema.eachPath(property => properties.push(property))
 	return properties.filter((value) => {
 		return !exclusions.includes(value) ? value : undefined
 	})
 }
 
-module.exports.accessGranted = async(token, resourceType) => {
+/* module.exports.accessGranted = async(token, resourceType) => {
 	const decodedToken = jwt.verify(token, this.jwtKey)
 	const userReq = { username: decodedToken.username }
 	if(decodedToken.username == this.defaultAdmin.admUsername){
@@ -53,4 +53,4 @@ module.exports.accessGranted = async(token, resourceType) => {
 			return resp.data[0].accessRight
 		}
 	}) 
-}
+} */

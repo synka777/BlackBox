@@ -1,5 +1,5 @@
-const utils = require('../kernel/utils');
-const mongoose = require('mongoose');
+const utils = require('../kernel/utils')
+const mongoose = require('mongoose')
 
 /* Ce fichier sert à effectuer des opérations CRUD basiques pour n'importe quel modèle. */
 
@@ -13,8 +13,8 @@ const mongoose = require('mongoose');
 module.exports.createDocument = async function(body, modelName, exclusions, schemaObject){
     if(Object.keys(body).length==0){
         return {"status":400}
-    };
-    const requiredProperties = utils.getModelProperties(modelName, exclusions);
+    }
+    const requiredProperties = utils.getModelProperties(modelName, exclusions)
     try {
         // Créée un modèle
         const model = mongoose.model(modelName, schemaObject)
@@ -41,7 +41,7 @@ module.exports.createDocument = async function(body, modelName, exclusions, sche
         if(err.name=='TypeError'){
             return {"status":409, "statusMessage":"Conflict : A document may already exist by that name"}
         }else{
-            console.log(err);
+            console.log(err)
             return {"status":500, "data":err.name}
         }
     }
@@ -74,12 +74,12 @@ module.exports.createDocument = async function(body, modelName, exclusions, sche
     {"name": "CGI","skip": 10,"limit": 10}
 */
 module.exports.readDocuments = async function(body, modelName, exclusions){
-    const requiredProperties = ['skip','limit'].concat(utils.getModelProperties(modelName, exclusions));
+    const requiredProperties = ['skip','limit'].concat(utils.getModelProperties(modelName, exclusions))
     const propertiesProvided = Object.getOwnPropertyNames(body)
     const documentModel = mongoose.model(modelName)
-    const data = [];
-    const skip = body.skip?Number(body.skip):0;
-    const limit = body.limit?Number(body.limit):0;
+    const data = []
+    const skip = body.skip?Number(body.skip):0
+    const limit = body.limit?Number(body.limit):0
     if(body.filters){
         // Recherche avec body et requêtes multiples
         for(let filter of body.filters){
@@ -93,12 +93,12 @@ module.exports.readDocuments = async function(body, modelName, exclusions){
             try {
                 await documentModel.find(filter).exec().then(results => {
                     for(let result of results){
-                        data.push(result);
+                        data.push(result)
                     }
                 })
                 return {"status":200, "data":data}
             } catch(err) {
-                console.log(err);
+                console.log(err)
                 return {"status":400, "data":err.name}
             }
         }
@@ -113,7 +113,7 @@ module.exports.readDocuments = async function(body, modelName, exclusions){
     const filter = body ? body : undefined
     try {
         await documentModel.find(filter).skip(skip).limit(limit).exec().then(documents => {
-            for(let document of documents) data.push(document);
+            for(let document of documents) data.push(document)
         })
         if(data!=''){
             return {"status":200, "data":data}
@@ -121,7 +121,7 @@ module.exports.readDocuments = async function(body, modelName, exclusions){
             return {"status":404}
         }
     } catch(err) {
-        console.log(err);
+        console.log(err)
         if(err.name=='TypeError'){
             return {"status":500, "statusMessage":"Not found"}
         }
@@ -142,7 +142,7 @@ module.exports.readDocuments = async function(body, modelName, exclusions){
 */
 module.exports.updateDocument = async function(body, modelName){
     const documentModel = mongoose.model(modelName)
-    let response = {};
+    let response = {}
     if(Object.keys(body).length == 0) {
         return {"status":400, "error":"Body required"}
     }
@@ -150,10 +150,10 @@ module.exports.updateDocument = async function(body, modelName){
         try {
             if(Object.values(body.filter).every(value=> { if(value==''){ return true } })){
                 throw SyntaxError
-            };
+            }
             if(Object.values(body.replace).every(value=> { if(value==''){ return true } })){
                 throw SyntaxError
-            };
+            }
             // On vérifie si un objet n'existe pas déjà avec les informations données en entrée
             await documentModel.find(body.replace).exec().then(document => {if(document!=''){throw Error}})
             await documentModel.find(body.filter).exec().then(document => {
@@ -167,7 +167,7 @@ module.exports.updateDocument = async function(body, modelName){
             })
             return response
         } catch(err) {
-            console.log(err);
+            console.log(err)
             if(err.name=='TypeError'){
                 return {"status":404}
             }
@@ -191,16 +191,16 @@ module.exports.deleteDocument = async function(body, modelName, exclusions){
     if(Object.keys(body).length == 0){
         return {"status":400, "statusMessage":"Body required"}
     } 
-    const requiredProperties = ['skip','limit'].concat(utils.getModelProperties(modelName, exclusions));
+    const requiredProperties = ['skip','limit'].concat(utils.getModelProperties(modelName, exclusions))
     const propertiesProvided = Object.getOwnPropertyNames(body)
     if(requiredProperties.filter((prop)=>{return propertiesProvided.includes(prop)}).length==0){
         return {"status":400, "statusMessage":"Unknown property"}
     }
-    const response = [];
+    const response = []
     try {
-        return !(await searchAndDestroy(body, modelName)) ? {"status":200, "statusMessage":"Deleted"} : undefined;
+        return !(await searchAndDestroy(body, modelName)) ? {"status":200, "statusMessage":"Deleted"} : undefined
     } catch(err) {
-        console.log(err);
+        console.log(err)
         if(err.name=='TypeError'){
             return {"status":404, "statusMessage":"Not found"}
         }
@@ -211,7 +211,7 @@ module.exports.deleteDocument = async function(body, modelName, exclusions){
 async function searchAndDestroy(filter, modelName) {
     const documentModel = mongoose.model(modelName)
     await documentModel.find(filter).exec().then(document => {
-        return documentModel.findByIdAndDelete(document[0]._id);
-    });
+        return documentModel.findByIdAndDelete(document[0]._id)
+    })
 }
 
