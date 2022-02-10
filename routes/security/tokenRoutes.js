@@ -1,45 +1,36 @@
 const express = require("express")
 const router = express.Router()
-const baseController = require("../../controllers/baseController")
 const utils = require('../../kernel/utils.js')
 
 const jwt = require('jsonwebtoken')
 const jwtExpirySeconds = 9000
 
-router.post('/generate', (req, res) => {
-    const { admUsername, admPasswd} = utils.defaultAdmin
-    const { username, password} = req.body
-    if(username == admUsername && password == admPasswd){
-        const token = jwt.sign({ username }, utils.jwtKey, {
-            algorithm: 'HS256',
-            expiresIn: jwtExpirySeconds
-        })
-        res.cookie('token', token, { maxAge: jwtExpirySeconds * 1000 })
-        res.end()
-    }else{
-        baseController.readDocuments(req.body, 'User', ['_id','__v']).then(resp => {
-            if(resp.status!=200){res.status(401).end()}
-            const username = req.body.username
-            // Créée un nouveau token avec le nom d'utilisateur dans le payload avec expiration après 300s
-            // ajouter le role utilisateur dans le payload quand les roles seront créés
-            const token = jwt.sign({ username }, utils.jwtKey, {
-                algorithm: 'HS256',
-                expiresIn: jwtExpirySeconds
-            })
-            // on renvoie le token en tant que cookie
-            res.cookie('token', token, { maxAge: jwtExpirySeconds * 1000 })
-            res.end()
-        })
+router.post('/generate', (req, res) => { 
+    if(!req.body.username){
+        res.status(401).end()
     }
+    const username = req.body.username
+    console.log('New token for:', username)
+    // Créée un nouveau token avec le nom d'utilisateur dans le payload avec expiration après 300s
+    // ajouter le role utilisateur dans le payload quand les roles seront créés
+    const token = jwt.sign({ username }, utils.jwtKey, {
+        algorithm: 'HS256',
+        expiresIn: jwtExpirySeconds
+    })
+    // on renvoie le token en tant que cookie
+    res.cookie('token', token, { maxAge: jwtExpirySeconds * 1000 })
+    res.end()
 })
 
 router.post('/refresh', (req, res) => {
     const token = req.cookies.token
-    if (!token) return res.status(401).end()
-    const payload = utils.verifyToken(res, utils.jwtKey, token)
-    if(payload.status){ 
+
+    if(!token) return res.status(401).end()
+    const payload = utils.verifyToken(res, token)
+
+    if(payload.status){ // Si payload contient 'status' c'est qu'une erreur s'est produite
         res.end()
-        return payload.status 
+        return payload.status
     }
 
     // Un nouveau token ne sera délivré que si l'ancien token va expirer dans les 30 secondes
@@ -51,7 +42,6 @@ router.post('/refresh', (req, res) => {
         algorithm: 'HS256',
         expiresIn: jwtExpirySeconds
     })
-
     res.cookie('token', newToken, { maxAge: jwtExpirySeconds * 1000 })
     res.end()
 })

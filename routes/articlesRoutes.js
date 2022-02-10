@@ -23,10 +23,15 @@ router.get('/read', async(req, res) => {
     }catch(e){
         return res.status(401).end()
     }
-    baseController.readDocuments(req.body, resource, ['_id','__v']).then(resp => {
+    res.write(JSON.stringify({ title: 'The big sad' }))
+    res.status(200)
+    res.send()
+    /* baseController.readDocuments(req.body, resource, ['_id','__v']).then(resp => {
         if(resp.statusMessage){ res.statusMessage = resp.statusMessage }
         if(resp.data){(res.write(JSON.stringify(resp.data)))}
         res.status(Number(resp.status))
         res.send()
-    })
+    }) */
 })
+
+module.exports = router

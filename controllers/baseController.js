@@ -1,6 +1,9 @@
 const utils = require('../kernel/utils')
 const mongoose = require('mongoose')
 
+/* FICHIER EXEMPLE MONTRANT UN CONTROLLER AVEC DES FONCTIONS AVANCEES VERIFIANT LES PARAMETRES D'ENTREE */
+
+
 /* Ce fichier sert à effectuer des opérations CRUD basiques pour n'importe quel modèle. */
 
 /* CREATE, USAGE:

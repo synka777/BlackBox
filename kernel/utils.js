@@ -1,12 +1,12 @@
 const mongoose = require('mongoose')
 const jwt = require('jsonwebtoken')
-const baseController = require('../controllers/baseController')
+//const baseController = require('../controllers/baseController')
 
 module.exports.jwtKey = 'my_secret_key'
-module.exports.defaultAdmin = {
+/* module.exports.defaultAdmin = {
     admUsername: 'origin',
     admPasswd: 'h4xx0rz!'
-}
+} */
 
 module.exports.verifyToken = (res, token) => {
     try {
@@ -28,6 +28,8 @@ module.exports.getModelProperties = (modelName, exclusions) => {
 	})
 }
 
+/* Non utilisé, laissé à titre d'exemple pour montrer syntaxes possibles lorsque l'on 
+a besoin d'utiliser des controllers et appliquer des traitements suite au résultat obtenu */
 /* module.exports.accessGranted = async(token, resourceType) => {
 	const decodedToken = jwt.verify(token, this.jwtKey)
 	const userReq = { username: decodedToken.username }

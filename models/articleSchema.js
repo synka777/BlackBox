@@ -4,12 +4,12 @@ const { Schema } = mongoose
 const articleSchema = new Schema({
     title: { name: String, type: String },
     date: { name: String, type: Number },
-    cover: { name: String, type: String }, // check how to send files through postman AND OrbitDB
+    cover: { name: String, type: String }, // vérifier comment recevoir des fichiers par un front-end et comment envoyer des fichiers sur IPFS via OrbitDB
     score: { name: String, type: Number },
     nsfw: { name: String, type: Boolean },
     trash: { name: String, type: Boolean },
     category: { name: String, type: Number },
-    media: [{ // check how to send files through postman AND OrbitDB
+    media: [{ // vérifier comment recevoir des fichiers par un front-end et comment envoyer des fichiers sur IPFS via OrbitDB
         title: { name: String, type: String },
         data: { name: String, type: String },
     }],

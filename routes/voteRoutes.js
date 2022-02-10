@@ -16,3 +16,7 @@ router.get('/', (req, res) => {
 // voteReport
 
 // voteTrash
+
+
+
+module.exports = router
