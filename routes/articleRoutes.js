@@ -24,11 +24,20 @@ router.post('/create', async (req, res) => {
   }
   // TODO: appeler un controller pour stocker des données dans BigchainDB
   // Ajouter gestion d'erreurs
-  utils.createTx(req.body.data, req.body.metadata).then( tx => {
-    utils.signTx(tx).then( signedTx =>{
-      utils.postTx(signedTx)
-    })
-  })
+  // utils.createTx(req.body.data, req.body.metadata).then( tx => {
+  //   console.log('Transaction:', tx);
+  //   utils.signTx(tx).then( signedTx => {
+  //     console.log('Signed transaction:', tx);
+  //     utils.postTx(signedTx).then(result => console.log('Result:', result))
+  //   })
+  // })
+  const tx = utils.createTx(req.body.data, req.body.metadata);
+  console.log('Transaction:', tx);
+  const signedTx = utils.signTx(tx);
+  console.log('Signed transaction:', signedTx);
+  const result = utils.postTx(signedTx);
+  console.log('Result:', result);
+
 
   // TODO: add orbitDB create operation to store  and check the result here
 

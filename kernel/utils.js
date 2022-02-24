@@ -9,7 +9,7 @@ module.exports.jwtKey = 'my_secret_key';
 module.exports.keys = {
   'publicKey':'B9Y5QTx89DzKbaefD9PWFKvAdt91shhYDCjGK2oY5Mc4',
   'privateKey':'GHKczvHhvKVoqHx153MX28c9sG5QiVsGuKxCxXZgefbH'
-}
+};
 
 // Token
 module.exports.verifyToken = (res, token) => {
@@ -25,19 +25,22 @@ module.exports.verifyToken = (res, token) => {
 
 // Transactions
 module.exports.createTx = (data, metadata) => {
+  const output = driver.Transaction.makeOutput(
+    driver.Transaction.makeEd25519Condition(this.keys.publicKey))
   return driver.Transaction.makeCreateTransaction(
       data,
       metadata,
       output,
-      keys.publicKey,
+      this.keys.publicKey,
   );
 };
 
 module.exports.signTx = (transaction) => {
-  return driver.Transaction.signTransaction(transaction, keys.privateKey);
+  return driver.Transaction.signTransaction(transaction, this.keys.privateKey);
 };
 
 module.exports.postTx = async (signedTransaction) => {
+  // PROBLEM HERE
   const retrievedTx = await db.bcDBdriver.postTransactionCommit(signedTransaction);
   return console.log('Transaction', retrievedTx.id, 'successfully posted.');
 };
