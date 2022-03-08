@@ -24,7 +24,6 @@ router.get('/', (req, res) => {
     res.send()
 })
 
-
 app.use(express.json()) // Permet de prendre en charge le body de requêtes HTTP au format JSON.
 app.use(cookieParser()) // Permet de prendre en charge les cookies, en entrée et sortie (ex: pour le stockage du token)
 app.use(cors())

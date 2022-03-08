@@ -1,5 +1,5 @@
 {
-  "name": "demoexpress",
+  "name": "blackboxnodeback",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bigchaindb-driver": "^4.3.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
