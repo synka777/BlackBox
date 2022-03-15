@@ -7,4 +7,4 @@ app.set('port', port)
 
 
 var server = http.createServer(app)
-server.listen(port)
+server.listen(port, () => console.log('Running on port:', port))
