@@ -47,6 +47,7 @@ module.exports.createTx = (data, metadata, publicKey) => {
   return driver.Transaction.makeCreateTransaction(
       data,
       metadata,
+      //output,
       [output],
       publicKey,
   );
@@ -57,14 +58,13 @@ module.exports.signTx = (transaction, privateKey) => {
 };
 
 module.exports.postTx = async (signedTransaction) => {
-  console.log('got uri', uri)
   const conn = new driver.Connection('http://localhost:9984/api/v1/');
-  console.log('conn', conn)
   //const retrievedTx = await conn.postTransactionSync(signedTransaction);
   return conn.postTransactionCommit(signedTransaction)
   .then(resp => resp)
   .catch(err => {
-    console.log('Error', err)
+    console.log('Failure: postTransactionCommit', err);
+    return err;
   });
 };
 
@@ -77,6 +77,16 @@ module.exports.getModelProperties = (modelName, exclusions) => {
     return !exclusions.includes(value) ? value : undefined;
   });
 };
+
+// Sert à découper une string de status en code de retour HTTP avec son message associé
+module.exports.parseStatus = (string) => {
+  const status = { 'code': null, 'error': false, 'detail': null};
+  if(!string.match('20[01]')){ status.error = true }
+  status.detail = string.match('([^0-9]{3}).*')[0];
+  status.code = Number(string.match('[0-9]{3}')[0]);
+  if(status.detail !== null){ status.detail = status.detail.trim()}
+  return status;
+}
 
 /* Non utilisé, laissé à titre d'exemple pour montrer syntaxes possibles lorsque l'on
 a besoin d'utiliser des controllers et appliquer des traitements suite au résultat obtenu */
