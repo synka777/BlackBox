@@ -14,8 +14,28 @@ module.exports.createArticle = async function(data, metadata){
         // donc on en ajoute un manuellement
         resp.status = resp.status === undefined ? '200 OK' : resp.status;
         resp.status = utils.parseStatus(resp.status);
-        return resp;   
+        return resp;
     })
 }
+
+module.exports.searchArticle = async function(search){
+    // check if input contains data type
+    return await bcDB.readAssets(search).then(resp => {
+        // process response using parsestatus
+        // check if the matched string is from the properties we want
+        return resp;
+    })
+}
+
+module.exports.getArticleById = async function(search){
+    // check if input contains article ID
+    return await bcDB.readAssets(search).then(resp => {
+        // process response using parsestatus
+        // check if the matched string is from the property we want
+        return resp;
+    })
+}
+
+// TODO: Manage update operations on bigchainDB articles
 
 // IPDB: Opérations CRUD

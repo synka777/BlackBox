@@ -27,7 +27,6 @@ router.post('/create', async (req, res) => {
   // TODO: appeler un controller pour stocker des données dans BigchainDB
   // Ajouter gestion d'erreurs
   await articleController.createArticle(req.body.data, req.body.metadata).then(resp => {
-    console.log('route got',resp)
     // Si la réponse est une erreur, on formatte la réponse en erreur. Sinon, success
     const response = resp.status['error']
     ? error(resp.message, resp.status.code)
@@ -66,7 +65,18 @@ router.post('/read', async (req, res) => {
     return res.status(401).end();
   }
   // TODO: appeler un controller pour lire des données dans BigchainDB
-
+  await articleController.searchArticle().then(resp => {
+    console.log('route got',resp)
+    // Si la réponse est une erreur, on formatte la réponse en erreur. Sinon, success
+    const response = resp.status['error']
+    ? error(resp.message, resp.status.code)
+    : success('Successful', resp.status.code, resp.id);
+    res.status(response.code);
+    res.write(JSON.stringify(response));
+  }).catch(err => {
+    res.status(500);
+    res.write(JSON.stringify(err));
+  })
   // TODO: add orbitDB read operation to store and check the result here
 
   // exemple d'implémentation de réponse de controller, permet de retourner un statut cohérent avec le résultat

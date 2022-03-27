@@ -12,15 +12,23 @@ const port = process.env.DB_PORT;
     'privateKey':'GHKczvHhvKVoqHx153MX28c9sG5QiVsGuKxCxXZgefbH'
 }; */
 
-module.exports.uri = `http://${host}:${port}/api/v1/`
+module.exports.uri = `http://${host}:${port}/api/v1/`;
+module.exports.conn = new driver.Connection(this.uri);
 
 module.exports.createNewAsset = async (data, metadata) => {
-    console.log('got in createNA', data, metadata)
     const {publicKey, privateKey} = this.generateKeyPair();
     const tx = this.createTx(data, metadata, publicKey);
     const signedTx = this.signTx(tx, privateKey);
 
     return this.postTx(signedTx);
+}
+
+module.exports.readAssets = async (search) => {
+    return this.conn.searchAssets(search);
+}
+
+module.exports.readAssetsMetadata = async (search) => {
+    return this.conn.searchMetadata(search);
 }
 
 module.exports.generateKeyPair = () => {
@@ -45,11 +53,7 @@ module.exports.signTx = (transaction, privateKey) => {
 };
 
 module.exports.postTx = async (signedTransaction) => {
-    console.log('signed tx',signedTransaction)
-    console.log('uri',this.uri)
-    const conn = new driver.Connection(this.uri);
-    //const retrievedTx = await conn.postTransactionSync(signedTransaction);
-    return conn.postTransactionCommit(signedTransaction)
+    return this.conn.postTransactionCommit(signedTransaction)
     .then(resp => resp)
     .catch(err => {
         console.log('Failure: postTransactionCommit', err);

@@ -3,15 +3,11 @@ const app = express()
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
 const router = express.Router()
-const db = require('./kernel/db')
 
 const tokenMgmtRoutes = require("./routes/security/tokenRoutes.js")
 const articleRoutes = require("./routes/articleRoutes.js")
 const articlesRoutes = require("./routes/articlesRoutes.js")
 const voteRoutes = require("./routes/voteRoutes.js")
-
-// Connection à la db bypassée pour que le code se lance sans erreurs (vu que la partie base de données n'est pas encore opérationnelle)
-//db.connect()
 
 router.get('/', (req, res) => {
     res.write('ROOT')
