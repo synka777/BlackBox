@@ -1,17 +1,8 @@
-const driver = require('bigchaindb-driver');
 const jwt = require('jsonwebtoken');
-const {uri} = require('../kernel/db');
-const {Ed25519Sha256} = require('crypto-conditions');
-const res = require('express/lib/response');
+const bigchainDB = require('./ext/bcDB');
 // const baseController = require('../controllers/baseController')
 
-// const identity = new driver.Ed25519Keypair()
 module.exports.jwtKey = 'my_secret_key';
-
-/* module.exports.keys = {
-  'publicKey':'B9Y5QTx89DzKbaefD9PWFKvAdt91shhYDCjGK2oY5Mc4',
-  'privateKey':'GHKczvHhvKVoqHx153MX28c9sG5QiVsGuKxCxXZgefbH'
-}; */
 
 // Token
 module.exports.verifyToken = (res, token) => {
@@ -25,67 +16,31 @@ module.exports.verifyToken = (res, token) => {
   }
 };
 
-
 // Transactions
 
-module.exports.createNewAsset = async (data, metadata) => {
-  const {publicKey, privateKey} = this.generateKeyPair();
-  const tx = this.createTx(data, metadata, publicKey);
-  const signedTx = this.signTx(tx, privateKey);
+/* module.exports.bcDB = () => {
+  console.log('giving access to bcdb utils')
+  return bigchainDB;
+} */
 
-  return this.postTx(signedTx);
-}
-
-module.exports.generateKeyPair = () => {
-  return new driver.Ed25519Keypair()
+  // Misc
+  module.exports.getModelProperties = (modelName, exclusions) => {
+    const newModel = mongoose.model(modelName);
+    const properties = [];
+    newModel.schema.eachPath((property) => properties.push(property));
+    return properties.filter((value) => {
+        return !exclusions.includes(value) ? value : undefined;
+    });
 };
 
-module.exports.createTx = (data, metadata, publicKey) => {
-  const output = driver.Transaction.makeOutput(
-    driver.Transaction.makeEd25519Condition(publicKey)
-  );
-  return driver.Transaction.makeCreateTransaction(
-      data,
-      metadata,
-      //output,
-      [output],
-      publicKey,
-  );
-};
-
-module.exports.signTx = (transaction, privateKey) => {
-  return driver.Transaction.signTransaction(transaction, privateKey);
-};
-
-module.exports.postTx = async (signedTransaction) => {
-  const conn = new driver.Connection('http://localhost:9984/api/v1/');
-  //const retrievedTx = await conn.postTransactionSync(signedTransaction);
-  return conn.postTransactionCommit(signedTransaction)
-  .then(resp => resp)
-  .catch(err => {
-    console.log('Failure: postTransactionCommit', err);
-    return err;
-  });
-};
-
-// Misc
-module.exports.getModelProperties = (modelName, exclusions) => {
-  const newModel = mongoose.model(modelName);
-  const properties = [];
-  newModel.schema.eachPath((property) => properties.push(property));
-  return properties.filter((value) => {
-    return !exclusions.includes(value) ? value : undefined;
-  });
-};
-
-// Sert à découper une string de status en code de retour HTTP avec son message associé
+  // Sert à découper une string de status en code de retour HTTP avec son message associé
 module.exports.parseStatus = (string) => {
-  const status = { 'code': null, 'error': false, 'detail': null};
-  if(!string.match('20[01]')){ status.error = true }
-  status.detail = string.match('([^0-9]{3}).*')[0];
-  status.code = Number(string.match('[0-9]{3}')[0]);
-  if(status.detail !== null){ status.detail = status.detail.trim()}
-  return status;
+    const status = { 'code': null, 'error': false, 'detail': null};
+    if(!string.match('20[01]')){ status.error = true }
+    status.detail = string.match('([^0-9]{3}).*')[0];
+    status.code = Number(string.match('[0-9]{3}')[0]);
+    if(status.detail !== null){ status.detail = status.detail.trim()}
+    return status;
 }
 
 /* Non utilisé, laissé à titre d'exemple pour montrer syntaxes possibles lorsque l'on

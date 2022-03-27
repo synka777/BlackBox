@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const utils = require('../kernel/utils');
-const { success, error, validation } = require("../kernel/formatResponse");
+const { success, error } = require("../kernel/formatResponse");
+const articleController = require('../controllers/articleController')
 
 router.get('/', (req, res) => {
   res.write('Envoie une requête pour créer un nouvel article');
@@ -25,27 +26,22 @@ router.post('/create', async (req, res) => {
   }
   // TODO: appeler un controller pour stocker des données dans BigchainDB
   // Ajouter gestion d'erreurs
-  await utils.createNewAsset(req.body.data, req.body.metadata).then(resp => {
-    // Si la requête vers bigchainDB s'exécute correctement il n'y a pas de code de retour
-    // donc on en ajoute un manuellement
-    resp.status = resp.status === undefined ? '200 OK' : resp.status;
-    resp.status = utils.parseStatus(resp.status);
-
+  await articleController.createArticle(req.body.data, req.body.metadata).then(resp => {
+    console.log('route got',resp)
     // Si la réponse est une erreur, on formatte la réponse en erreur. Sinon, success
     const response = resp.status['error']
     ? error(resp.message, resp.status.code)
     : success('Successful', resp.status.code, resp.id);
-    
     res.status(response.code);
     res.write(JSON.stringify(response));
-    
   }).catch(err => {
     res.status(500);
     res.write(JSON.stringify(err));
   })
+  
   res.send();
-  // TODO: add orbitDB create operation to store  and check the result here
-
+  // TODO: add create operation to store pics and videos and check the result here
+  // TODO: check if the file is of valid type before storing it
   // exemple d'implémentation de réponse de controller, permet de retourner un statut cohérent avec le résultat
   // rendu par le controller.
   /* baseController.createDocument(req.body, resource, ['_id','__v'], titleAndImageSchema).then(resp => {
