@@ -3,8 +3,8 @@ const driver = require('bigchaindb-driver');
 require('dotenv').config()
 //const {Ed25519Sha256} = require('crypto-conditions');
 
-const host = process.env.DB_HOST;
-const port = process.env.DB_PORT;
+const host = process.env.BC_HOST;
+const port = process.env.BC_PORT;
 
 // const identity = new driver.Ed25519Keypair()
 /* module.exports.keys = {
@@ -23,11 +23,11 @@ module.exports.createNewAsset = async (data, metadata) => {
     return this.postTx(signedTx);
 }
 
-module.exports.readAssets = async (search) => {
+module.exports.searchAssets = async (search) => {
     return this.conn.searchAssets(search);
 }
 
-module.exports.readAssetsMetadata = async (search) => {
+module.exports.searchMetadata = async (search) => {
     return this.conn.searchMetadata(search);
 }
 

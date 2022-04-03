@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { stringify } = require('nodemon/lib/utils');
 const bigchainDB = require('./ext/bcDB');
 // const baseController = require('../controllers/baseController')
 
@@ -24,23 +25,34 @@ module.exports.verifyToken = (res, token) => {
 } */
 
   // Misc
-  module.exports.getModelProperties = (modelName, exclusions) => {
-    const newModel = mongoose.model(modelName);
-    const properties = [];
-    newModel.schema.eachPath((property) => properties.push(property));
-    return properties.filter((value) => {
-        return !exclusions.includes(value) ? value : undefined;
-    });
+module.exports.getModelProperties = (modelName, exclusions) => {
+  const newModel = mongoose.model(modelName);
+  const properties = [];
+  newModel.schema.eachPath((property) => properties.push(property));
+  return properties.filter((value) => {
+    return !exclusions.includes(value) ? value : undefined;
+  });
 };
 
   // Sert à découper une string de status en code de retour HTTP avec son message associé
 module.exports.parseStatus = (string) => {
-    const status = { 'code': null, 'error': false, 'detail': null};
-    if(!string.match('20[01]')){ status.error = true }
-    status.detail = string.match('([^0-9]{3}).*')[0];
-    status.code = Number(string.match('[0-9]{3}')[0]);
-    if(status.detail !== null){ status.detail = status.detail.trim()}
-    return status;
+  const status = { 'code': null, 'error': false, 'detail': null};
+  if(!string.match('20[01]')){ status.error = true }
+  status.detail = string.match('([^0-9]{3}).*')[0];
+  status.code = Number(string.match('[0-9]{3}')[0]);
+  if(status.detail !== null){ status.detail = status.detail.trim()}
+  return status;
+}
+
+// checks if a search result's properties matched the search with
+// an eligible property and not just with the 'type' property
+module.exports.validate = (result, keyword, typeName = '') => {
+  let match;
+  Object.entries(result.data).forEach(
+    ([key, value]) => {
+      if(stringify(value).includes(keyword) && key !== typeName){ match = true }
+    });
+  return match;
 }
 
 /* Non utilisé, laissé à titre d'exemple pour montrer syntaxes possibles lorsque l'on

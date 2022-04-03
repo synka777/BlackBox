@@ -53,7 +53,7 @@ router.post('/create', async (req, res) => {
   
 });
 
-router.post('/read', async (req, res) => {
+router.post('/search', async (req, res) => {
   const token = req.cookies.token;
   try {
     const payload = utils.verifyToken(res, token);
@@ -65,7 +65,7 @@ router.post('/read', async (req, res) => {
     return res.status(401).end();
   }
   // TODO: appeler un controller pour lire des données dans BigchainDB
-  await articleController.searchArticle().then(resp => {
+  await articleController.searchArticle(req.body).then(resp => {
     console.log('route got',resp)
     // Si la réponse est une erreur, on formatte la réponse en erreur. Sinon, success
     const response = resp.status['error']
