@@ -1,11 +1,11 @@
 const jwt = require('jsonwebtoken');
 const { stringify } = require('nodemon/lib/utils');
-const bigchainDB = require('./ext/bcDB');
+//const bigchainDB = require('./ext/bcDB');
 // const baseController = require('../controllers/baseController')
 
 module.exports.jwtKey = 'my_secret_key';
 
-// Token
+  ////////////// Token
 module.exports.verifyToken = (res, token) => {
   try {
     return jwt.verify(token, this.jwtKey);
@@ -17,14 +17,17 @@ module.exports.verifyToken = (res, token) => {
   }
 };
 
-// Transactions
+  ////////////////////////////
+  ////////////// Transactions
 
 /* module.exports.bcDB = () => {
   console.log('giving access to bcdb utils')
   return bigchainDB;
 } */
 
-  // Misc
+  ////////////////////////////
+  ////////////// Misc
+
 module.exports.getModelProperties = (modelName, exclusions) => {
   const newModel = mongoose.model(modelName);
   const properties = [];
@@ -53,6 +56,33 @@ module.exports.validate = (result, keyword, typeName = '') => {
       if(stringify(value).includes(keyword) && key !== typeName){ match = true }
     });
   return match;
+}
+
+module.exports.metadataToSearchPattern = (value, propertyName) => {
+  const seprtr = '**';
+  const nsfwSPatt = 'NSFW';
+  const catSPatt = 'CAT';
+  let prop = propertyName;
+
+  switch(propertyName) {
+    case 'nsfw':
+      prop = nsfwSPatt;
+      break;
+    case 'category':
+      prop = catSPatt;
+      break;
+    default:
+      return null;
+  }
+
+  if(value.startsWith(`${prop}${seprtr}`) 
+  && value.endsWith(`${seprtr}${prop}`)){
+    return value.split(seprtr)[1];
+  } else {
+    return `${prop}${separator}${value}${separator}${prop}`;
+  }
+  // this method returning null can mean the properties sent in the body are not correct
+
 }
 
 /* Non utilisé, laissé à titre d'exemple pour montrer syntaxes possibles lorsque l'on

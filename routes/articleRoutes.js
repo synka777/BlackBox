@@ -77,7 +77,7 @@ router.post('/search', async (req, res) => {
     res.status(500);
     res.write(JSON.stringify(err));
   })
-  // TODO: add orbitDB read operation to store and check the result here
+  // TODO: add support for a project that stores data and read what is stored here
 
   // exemple d'implémentation de réponse de controller, permet de retourner un statut cohérent avec le résultat
   // rendu par le controller.
