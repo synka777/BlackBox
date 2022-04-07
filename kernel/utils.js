@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { default: mongoose } = require('mongoose');
 const { stringify } = require('nodemon/lib/utils');
 //const bigchainDB = require('./ext/bcDB');
 // const baseController = require('../controllers/baseController')
@@ -49,7 +50,7 @@ module.exports.parseStatus = (string) => {
 
 // checks if a search result's properties matched the search with
 // an eligible property and not just with the 'type' property
-module.exports.validate = (result, keyword, typeName = '') => {
+module.exports.validateSrchResult = (result, keyword, typeName = '') => {
   let match;
   Object.entries(result.data).forEach(
     ([key, value]) => {
@@ -58,18 +59,20 @@ module.exports.validate = (result, keyword, typeName = '') => {
   return match;
 }
 
-module.exports.metadataToSearchPattern = (value, propertyName) => {
+// adds prefix and suffix to data to make a metadata easily searchable.
+// strips prefix and suffix if the data provided already has it
+module.exports.metadataToSrchPattern = (value, propertyName) => {
   const seprtr = '**';
-  const nsfwSPatt = 'NSFW';
-  const catSPatt = 'CAT';
+  const nsfwSrchPattern = 'NSFW';
+  const catSrchPattern = 'CAT';
   let prop = propertyName;
 
   switch(propertyName) {
     case 'nsfw':
-      prop = nsfwSPatt;
+      prop = nsfwSrchPattern;
       break;
     case 'category':
-      prop = catSPatt;
+      prop = catSrchPattern;
       break;
     default:
       return null;
@@ -79,10 +82,17 @@ module.exports.metadataToSearchPattern = (value, propertyName) => {
   && value.endsWith(`${seprtr}${prop}`)){
     return value.split(seprtr)[1];
   } else {
-    return `${prop}${separator}${value}${separator}${prop}`;
+    return `${prop}${seprtr}${value}${seprtr}${prop}`;
   }
   // this method returning null can mean the properties sent in the body are not correct
 
+}
+
+// checks if an object matches a model
+module.exports.validateObject = async (object, schemaObject, modelName) => {
+  const model = mongoose.model(modelName, schemaObject)
+  const newDocument = new model(object)
+  return newDocument.constructor.modelName === modelName;
 }
 
 /* Non utilisé, laissé à titre d'exemple pour montrer syntaxes possibles lorsque l'on

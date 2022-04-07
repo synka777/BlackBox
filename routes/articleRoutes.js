@@ -33,10 +33,10 @@ router.post('/create', async (req, res) => {
     : success('Successful', resp.status.code, resp.id);
     res.status(response.code);
     res.write(JSON.stringify(response));
-  }).catch(err => {
+  })/* .catch(err => {
     res.status(500);
     res.write(JSON.stringify(err));
-  })
+  }) */
   
   res.send();
   // TODO: add create operation to store pics and videos and check the result here
