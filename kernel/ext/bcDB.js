@@ -3,8 +3,8 @@ const driver = require('bigchaindb-driver');
 require('dotenv').config()
 //const {Ed25519Sha256} = require('crypto-conditions');
 
-const host = process.env.DB_HOST;
-const port = process.env.DB_PORT;
+const host = process.env.BC_HOST;
+const port = process.env.BC_PORT;
 
 // const identity = new driver.Ed25519Keypair()
 /* module.exports.keys = {
@@ -12,15 +12,23 @@ const port = process.env.DB_PORT;
     'privateKey':'GHKczvHhvKVoqHx153MX28c9sG5QiVsGuKxCxXZgefbH'
 }; */
 
-module.exports.uri = `http://${host}:${port}/api/v1/`
+module.exports.uri = `http://${host}:${port}/api/v1/`;
+module.exports.conn = new driver.Connection(this.uri);
 
 module.exports.createNewAsset = async (data, metadata) => {
-    console.log('got in createNA', data, metadata)
     const {publicKey, privateKey} = this.generateKeyPair();
     const tx = this.createTx(data, metadata, publicKey);
     const signedTx = this.signTx(tx, privateKey);
 
     return this.postTx(signedTx);
+}
+
+module.exports.searchAssets = async (search) => {
+    return this.conn.searchAssets(search);
+}
+
+module.exports.searchMetadata = async (search) => {
+    return this.conn.searchMetadata(search);
 }
 
 module.exports.generateKeyPair = () => {
@@ -45,11 +53,7 @@ module.exports.signTx = (transaction, privateKey) => {
 };
 
 module.exports.postTx = async (signedTransaction) => {
-    console.log('signed tx',signedTransaction)
-    console.log('uri',this.uri)
-    const conn = new driver.Connection(this.uri);
-    //const retrievedTx = await conn.postTransactionSync(signedTransaction);
-    return conn.postTransactionCommit(signedTransaction)
+    return this.conn.postTransactionCommit(signedTransaction)
     .then(resp => resp)
     .catch(err => {
         console.log('Failure: postTransactionCommit', err);
