@@ -115,6 +115,11 @@ module.exports.objIsAModel = async (object, schemaObject, modelName) => {
   return newDocument.constructor.modelName === modelName;
 }
 
+// checks if a result is a strict match
+module.exports.matches = (result, pattern) => {
+  return result.metadata.category === pattern ? true : false; 
+}
+
 /* Non utilisé, laissé à titre d'exemple pour montrer syntaxes possibles lorsque l'on
 a besoin d'utiliser des controllers et appliquer des traitements suite au résultat obtenu */
 /* module.exports.accessGranted = async(token, resourceType) => {

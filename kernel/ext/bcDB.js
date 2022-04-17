@@ -27,8 +27,9 @@ module.exports.searchAssets = async (search) => {
     return this.conn.searchAssets(search);
 }
 
-module.exports.searchMetadata = async (search) => {
-    return this.conn.searchMetadata(search);
+module.exports.searchMetadata = async (search = '', limit = 10) => {
+    return this.conn.searchMetadata(search, limit)/* .then()
+.catch(err => console.log('Error caught on call',err)) */;
 }
 
 module.exports.generateKeyPair = () => {

@@ -20,7 +20,7 @@ module.exports.createArticle = async function(data, metadata){
     metadata.category = utils.translateMetadata(metadata.category, 'category');
     metadata.nsfw = utils.translateMetadata(metadata.nsfw, 'nsfw');
     return await bcDB.createNewAsset(data, metadata).then(resp => {
-        console.log(resp);
+        console.log('New article created:',resp);
         // Si la requête vers bigchainDB s'exécute correctement il n'y a pas de code de retour
         // donc on en ajoute un manuellement
         resp.status = resp.status === undefined ? '200 OK' : resp.status;
@@ -30,50 +30,83 @@ module.exports.createArticle = async function(data, metadata){
 }
 
 module.exports.searchArticle = async function(search){
-    console.log('in searchArticle', search)
+    console.log('in searchArticle', search);
     /* let typeFound = false;
     let filteredResults = false;
     let error = false; */
     let assetResults = [];
+    let metadataResults = [];
     // TODO: use a correct return format with formatresponse
-    if(!search.type || search.type === (undefined || null || '')){
+    /* if(!search.type || search.type === (undefined || null || '')){
         return 'Error';
-    }
-
+    } */
+    // if req.body has a property 'category', trigger a search on this category
     if(search.category && search.category !== ('' || undefined)){
-        // Search metadata by category
+        console.log('category provided');
         const catSrchPattern = utils.translateMetadata(search.category, 'category');
-        bcDB.searchAssetsMetadata(catSrchPattern).then(results => {
-            // TODO: use the add/strip pattern function
-            // Only select articles that have the wanted category
-            
-            // if nsfw is false, delete nsfw articles
-            return results;
-        });
-
-        // TODO: store the results in the result array in a subproperty metadata
-        assetResults = assetResults;
+        bcDB.searchMetadata(catSrchPattern).then(results => {
+            results.map(result => {
+                if(!search.nsfw){
+                    // only add to results when both the query & the current asset
+                    // don't include a nsfw flag
+                    if(!result.nsfw){
+                        // ensures the result is a strict match
+                        if(utils.matches(result, catSrchPattern)){
+                            result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
+                            result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
+                            metadataResults.push(result)
+                        }
+                    }
+                }else{ // else just add everyting that strictly matches the search
+                    if(utils.matches(result, catSrchPattern)){
+                        result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
+                        result.metadata.category = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
+                        metadataResults.push(result);
+                    }
+                }
+            })
+            console.log(metadataResults)
+        })/* .catch(err => console.log('Somthing bad happened in BCDB call', err)) */;
     } else {
-        const nsfwFlag = search.nsfw === false || search.nsfw === undefined ? false : true
-        // if nsfw is false, search metadata with the nsfw 'true' pattern
+        console.log('no category provided')
+        const tempMetadata = [];
+        const trashSrchPattern = utils.translateMetadata('trash');
+        const nsfwFlag = search.nsfw === false || search.nsfw === undefined ? false : true;
+        // if nsfw is not true, search metadata with the nsfw 'true' pattern
         if(!nsfwFlag){
+            console.log('NSFW == FALSE');
             const nsfwSrchPattern = utils.translateMetadata(nsfwFlag, 'nsfw');
-            bcDB.searchAssetsMetadata(nsfwSrchPattern);
+            bcDB.searchMetadata(nsfwSrchPattern).then(metadataList => {
+                metadataList.map(metadata=>console.log);
+            })
+            
+            //tempMetadata = [...zn];
         } else {
-            bcDB.searchAssetsMetadata();
+            console.log('NSFW == TRUE')
+            // else, search for all data as we won't return only NSFW results
+            bcDB.searchMetadata().then(metadataList => {
+                metadataList.map(metadata=>console.log);
+            })
+            //tempMetadata = [...];
         }
-        // TODO: delete articles that have 'trash' as category
-
-        // TODO: use the add/strip pattern function
-
+        // only keep articles that don't have 'trash' as category
+        tempMetadata.map.filter(metadata => {
+            if(metadata.category !== trashSrchPattern){
+                metadataResults.push(metadata)
+            }
+        });
+        console.log('metadataz', metadataResults)
+        // TODO: use the add/strip pattern function after assembling assets with their metadata
+        
         // TODO: store the results in the result array in a subproperty metadata
-        assetResults = assetResults;
+        
+        //assetResults = assetResults;
     }
 
     // initiate multiple searches by ID to get the asset corresponding to the metadata we've already got
     // TODO: switch from actual search to local filtering
     if(search.keyword && search.keyword !== ('' || undefined)){
-        // TODO: convert to a solution more modern than a for loop?
+        // TODO: convert to a solution more modern than a for loop? A map maybe
         for(asset of assetResults){
             bcDB.searchAssets(asset.id).then(assets => {
                 // first, validate if the asset is really an article and then search for the keyword
