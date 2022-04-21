@@ -85,6 +85,7 @@ module.exports.translateMetadata = (value, propertyName) => {
   const seprtr = '**';
   const nsfwSrchPattern = 'NSFW';
   const catSrchPattern = 'CAT';
+  /* const typeSrchPattern = 'TYPE'; */
   let prop = propertyName;
 
   switch(propertyName) {
@@ -94,16 +95,17 @@ module.exports.translateMetadata = (value, propertyName) => {
     case 'category':
       prop = catSrchPattern;
       break;
-    default:
-      return null;
+    /* case 'type':
+      prop = typeSrchPattern;
+      break; */
   }
 
   if(value.startsWith(`${prop}${seprtr}`) 
   && value.endsWith(`${seprtr}${prop}`)){
     return value.split(seprtr)[1];
-  } else {
-    return `${prop}${seprtr}${value}${seprtr}${prop}`;
-  }
+  } 
+  return `${prop}${seprtr}${value}${seprtr}${prop}`;
+  
   // this method returning null can mean the properties sent in the body are not correct
 
 }
@@ -116,8 +118,8 @@ module.exports.objIsAModel = async (object, schemaObject, modelName) => {
 }
 
 // checks if a result is a strict match
-module.exports.matches = (result, pattern) => {
-  return result.metadata.category === pattern ? true : false; 
+module.exports.matches = (property, pattern) => {
+  return property === pattern ? true : false; 
 }
 
 /* Non utilisé, laissé à titre d'exemple pour montrer syntaxes possibles lorsque l'on

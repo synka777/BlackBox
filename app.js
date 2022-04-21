@@ -10,14 +10,14 @@ const articlesRoutes = require("./routes/articlesRoutes.js")
 const voteRoutes = require("./routes/voteRoutes.js")
 
 router.get('/', (req, res) => {
-    res.write('ROOT')
-    res.write(`
-        Pour tester l'API, utiliser Postman, Insomnia ou autre moyen
-        permettant d'inclure un body avec les requetes HTTP.
-        https://updates.insomnia.rest/downloads/windows/latest?app=com.insomnia.app&source=website
-        https://dl.pstmn.io/download/latest/win64
-    `)
-    res.send()
+  res.write('ROOT')
+  res.write(`
+    Pour tester l'API, utiliser Postman, Insomnia ou autre moyen
+    permettant d'inclure un body avec les requetes HTTP.
+    https://updates.insomnia.rest/downloads/windows/latest?app=com.insomnia.app&source=website
+    https://dl.pstmn.io/download/latest/win64
+  `)
+  res.send()
 })
 
 app.use(express.json()) // Permet de prendre en charge le body de requêtes HTTP au format JSON.
