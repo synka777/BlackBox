@@ -108,12 +108,24 @@ module.exports.searchArticle = async function(search){
             return asset;
           }
         })
-        if(isSearchResult){ return asset; }
-      } else {
+        // This return have to be here to return the asset out of the map
+        if(isSearchResult){
+          asset = asset[0];
+          return { 
+            id: asset.id,
+            data: asset.data, 
+            metadata: asset.metadata
+          }; 
+        }
+      } else { // TODO: refactor this property ordering in a function
         // else if no keyword, just return the asset
         asset = asset[0];
         asset.metadata = mdResult.metadata;
-        return asset;
+        return { 
+          id:asset.id,
+          data: asset.data, 
+          metadata: asset.metadata
+        };
       }
     });
   })
@@ -121,7 +133,7 @@ module.exports.searchArticle = async function(search){
   // TODO: find a proper way to handle that in a callback directly
   const results = (await Promise.all(assetResults)).filter(entry => {
     if(entry !== undefined){
-      return entry[0] !== undefined ? entry[0] : entry;
+      return entry;
     }
   })
   return { status: 200, results};
