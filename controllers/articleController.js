@@ -31,10 +31,8 @@ module.exports.createArticle = async function(data, metadata){
 
 module.exports.searchArticle = async function(search){
 	let metadataResults = [];
-
 	// if req.body has a property 'category', trigger a search on this category
 	if(search.category && search.category !== ('' || undefined)){
-		console.log('category provided');
 		const catSrchPattern = utils.translateMetadata(search.category, 'category');
 		bcDB.searchMetadata(catSrchPattern).then(results => {
 			results.map(result => {
@@ -119,14 +117,14 @@ module.exports.searchArticle = async function(search){
       }
     });
   })
-
   // Purging undefined entries from the results
+  // TODO: find a proper way to handle that in a callback directly
   const results = (await Promise.all(assetResults)).filter(entry => {
-    if(entry !== undefined){ return entry; }
+    if(entry !== undefined){
+      return entry[0] !== undefined ? entry[0] : entry;
+    }
   })
-
-  // TODO: build and return resp object with the response status
-
+  return { status: 200, results};
 }
 
 // TODO: Manage update operations on bigchainDB articles

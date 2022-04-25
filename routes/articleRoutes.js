@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const utils = require('../kernel/utils');
 const { success, error } = require("../kernel/formatResponse");
-const articleController = require('../controllers/articleController')
+const articleController = require('../controllers/articleController');
+const { response } = require('../app');
 
 router.get('/', (req, res) => {
   res.write('Envoie une requête pour créer un nouvel article');
@@ -64,29 +65,19 @@ router.post('/search', async (req, res) => {
   } catch (e) {
     return res.status(401).end();
   }
-  // TODO: appeler un controller pour lire des données dans BigchainDB
   await articleController.searchArticle(req.body).then(resp => {
-    console.log('route got',resp)
-    // Si la réponse est une erreur, on formatte la réponse en erreur. Sinon, success
+    // TODO: adapt this condition to handle errors that can actually be returned
+    // by the controller when processing bcDB requests
     const response = resp.status['error']
-    ? error(resp.message, resp.status.code)
-    : success('Successful', resp.status.code, resp.id);
+    ? error('Error', resp.status)
+    : success('Successful', resp.status, resp.results);
     res.status(response.code);
     res.write(JSON.stringify(response));
   }).catch(err => {
     res.status(500);
     res.write(JSON.stringify(err));
   })
-  // TODO: add support for a project that stores data and read what is stored here
-
-  // exemple d'implémentation de réponse de controller, permet de retourner un statut cohérent avec le résultat
-  // rendu par le controller.
-  /* baseController.createDocument(req.body, resource, ['_id','__v'], titleAndImageSchema).then(resp => {
-        if(resp.statusMessage){ res.statusMessage = resp.statusMessage }
-        if(resp.data){(res.write(JSON.stringify(resp.data)))}
-        res.status(Number(resp.status))
-        res.send()
-    }) */
+  res.send();
 });
 
 router.post('/update', async (req, res) =>{
