@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Node.js - Attach",
+            "port": 9229,
+            "request": "attach",
+            "cwd": "${workspaceRoot}",
+            "sourceMaps": true,
+            "skipFiles": ["<node_internals>/**"],
+            "type": "node",
+            "trace": true
+        }
+    ]
+}

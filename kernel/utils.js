@@ -48,9 +48,29 @@ module.exports.parseStatus = (string) => {
   return status;
 }
 
+module.exports.validateSrchResults = (assets, keyword, typeName = '') => {
+  const validKWResults = [];
+  for(let asset of assets){
+    // if the keyword searched by the client is a type name,
+    if(search.keyword === asset.type){ 
+        // make sure it also has the keyword in at least one another property ('content' or 'title')
+        if(this.validateSrchResult(asset, keyword, typeName)){
+            validKWResults.push(asset);
+        }
+        // and if the keyword is not found in title or content, error
+    } else { 
+        // else, just check if the keyword is found
+        if(this.validateSrchResult(asset, keyword, typeName)){
+            validKWResults.push(asset);
+        }
+    }
+    return validKWResults;
+  }
+}
+
 // checks if a search result's properties matched the search with
 // an eligible property and not just with the 'type' property
-module.exports.validateSrchResult = (result, keyword, typeName = '') => {
+/* module.exports. */validateSrchResult = (result, keyword, typeName = '') => {
   let match;
   Object.entries(result.data).forEach(
     ([key, value]) => {
@@ -61,10 +81,11 @@ module.exports.validateSrchResult = (result, keyword, typeName = '') => {
 
 // adds prefix and suffix to data to make a metadata easily searchable.
 // strips prefix and suffix if the data provided already has it
-module.exports.metadataToSrchPattern = (value, propertyName) => {
+module.exports.translateMetadata = (value, propertyName) => {
   const seprtr = '**';
   const nsfwSrchPattern = 'NSFW';
   const catSrchPattern = 'CAT';
+  /* const typeSrchPattern = 'TYPE'; */
   let prop = propertyName;
 
   switch(propertyName) {
@@ -74,25 +95,31 @@ module.exports.metadataToSrchPattern = (value, propertyName) => {
     case 'category':
       prop = catSrchPattern;
       break;
-    default:
-      return null;
+    /* case 'type':
+      prop = typeSrchPattern;
+      break; */
   }
 
   if(value.startsWith(`${prop}${seprtr}`) 
   && value.endsWith(`${seprtr}${prop}`)){
     return value.split(seprtr)[1];
-  } else {
-    return `${prop}${seprtr}${value}${seprtr}${prop}`;
-  }
+  } 
+  return `${prop}${seprtr}${value}${seprtr}${prop}`;
+  
   // this method returning null can mean the properties sent in the body are not correct
 
 }
 
 // checks if an object matches a model
-module.exports.validateObject = async (object, schemaObject, modelName) => {
+module.exports.objIsAModel = async (object, schemaObject, modelName) => {
   const model = mongoose.model(modelName, schemaObject)
   const newDocument = new model(object)
   return newDocument.constructor.modelName === modelName;
+}
+
+// checks if a result is a strict match
+module.exports.matches = (property, pattern) => {
+  return property === pattern ? true : false; 
 }
 
 /* Non utilisé, laissé à titre d'exemple pour montrer syntaxes possibles lorsque l'on

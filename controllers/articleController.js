@@ -3,122 +3,146 @@ const bcDB = require('../kernel/ext/bcDB');
 const articleSchema = require('../models/articleSchema');
 //const mongoose = require('mongoose')
 
-/* ce fichier va inclure les fonctions Create, Read, Update et Delete des articles qui seront créées dans IPDB.
+/* ce fichier va inclure les fonctions Create, Read, et Update des articles qui seront créées dans IPDB.
 la fonction delete ne sera pas accessible par des endpoints, elle ne sera là qu'en cas de besoin
 pour gérer le contenu de la DB.*/ 
 
 // these controller methods will need to check the data format received before doing CRUD operations
 
 module.exports.createArticle = async function(data, metadata){
-    data.date = new Date();
-    // Checks if all the necessary properties are included in the request body
-    if(!utils.validateObject({...data, ...metadata}, articleSchema, 'Article')){
-        // TODO: return proper 400 error
-        return {status: '400'};
-    }
-    // Makes metadata easily searchable before creating the asset
-    metadata.category = utils.metadataToSrchPattern(metadata.category, 'category');
-    metadata.nsfw = utils.metadataToSrchPattern(metadata.nsfw, 'nsfw');
-    return await bcDB.createNewAsset(data, metadata).then(resp => {
-        console.log(resp);
-        // Si la requête vers bigchainDB s'exécute correctement il n'y a pas de code de retour
-        // donc on en ajoute un manuellement
-        resp.status = resp.status === undefined ? '200 OK' : resp.status;
-        resp.status = utils.parseStatus(resp.status);
-        return resp;
-    })
+	data.date = new Date();
+	// Checks if all the necessary properties are included in the request body
+	if(!utils.objIsAModel({...data, ...metadata}, articleSchema, 'Article')){
+		// TODO: return proper 400 error
+		return {status: '400'};
+	}
+	// Makes metadata easily searchable before creating the asset
+	metadata.category = utils.translateMetadata(metadata.category, 'category');
+	metadata.nsfw = utils.translateMetadata(metadata.nsfw, 'nsfw');
+	//metadata.type = utils.translateMetadata('article', 'type');
+	return await bcDB.createNewAsset(data, metadata).then(resp => {
+		// Si la requête vers bigchainDB s'exécute correctement il n'y a pas de code de retour
+		// donc on en ajoute un manuellement
+		resp.status = resp.status === undefined ? '200 OK' : resp.status;
+		resp.status = utils.parseStatus(resp.status);
+		return resp;
+	})
 }
 
 module.exports.searchArticle = async function(search){
-    console.log('in searchArticle', search)
-    // check if input contains data type
-    let typeFound = false;
-    let filteredResults = false;
-    let error = false;
-    let validResults = [];
-    // if type does not return any result, ERROR
-    // TODO: use a correct return format with formatresponse
-    if(!search.type || search.type === (undefined || null || '')){
-        return 'Error';
-    }
-    // TODO: return the response when this / callbacks will be done
-    if(search.keyword && search.keyword !== ('' || undefined)){
-        /* return  */bcDB.searchAssets('article').then(assets => {
-            // first, we validate if the asset is really an article and
-            // then we search for the keyword
-            for(let asset of assets){
-                // if the keyword searched by the client is a type name,
-                if(search.keyword === asset.type){ 
-                    // make sure it also has the keyword in at least one another property ('content' or 'title')
-                    if(utils.validateSrchResult(asset, search.keyword, search.type)){
-                        validResults.push(asset);
-                    }
-                    // and if the keyword is not found in title or content, error
-                } else { 
-                    // TODO: check if this part is redundant or not with what is done at line 41
-                    // else, just check if the keyword is found
-                    if(utils.validateSrchResult(asset, search.keyword, search.type)){
-                        validResults.push(asset);
-                    }
-                }
-                return validResults;
-            }/* else{ this statement is irrelevant here but it will be needed later
-                in this callback function
-                return assets;
-            } */
-        })
 
-    } else {
-        // else if no keyword, just search for everything
-        bcDB.searchAssets('article');
-    }
-    // if the search query contains a category or the nsfw flag to true,
-    // we will need to trigger a metadata search
-    if(
-        (search.category 
-        && search.category !== ('' || undefined))
-        || search.nsfw
-    ){
-        // if category, search all assets from that category and then 
-        // filter locally with the nsfw flag from the search query
-        const catSrchPattern = utils.metadataToSrchPattern(search.category, 'category');
-        bcDB.searchAssetsMetadata(catSrchPattern).then(resp => {
-            
-            return resp;
+	let metadataResults = [];
+	// if req.body has a property 'category', trigger a search on this category
+	if(search.category && search.category !== ('' || undefined)){
+		const catSrchPattern = utils.translateMetadata(search.category, 'category');
+		bcDB.searchMetadata(catSrchPattern).then(results => {
+			results.map(result => {
+				if(!search.nsfw){
+					// only add to results when both the query & the current asset
+					// don't include a nsfw flag
+					if(!result.nsfw){
+						// ensures the result is a strict match
+						if(utils.matches(result.metadata.category, catSrchPattern)){
+							result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
+							result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
+							metadataResults.push(result)
+						}
+					}
+				}else{ // else just add everyting that strictly matches the search
+					if(utils.matches(result.metadata.category, catSrchPattern)){
+						result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
+						result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
+						metadataResults.push(result);
+					}
+				}
+			})
+		})/* .catch(err => console.log('Somthing bad happened in BCDB call', err)) */;
+	} else {
+		let tempMetadata = [];
+		const trashSrchPattern = utils.translateMetadata('trash', 'category');
+		const nsfwFlag = search.nsfw === false || search.nsfw === undefined ? false : true;
+		// if nsfw is not true, search metadata with the nsfw 'true' pattern
+		const nsfwSrchPattern = utils.translateMetadata(`${nsfwFlag}`, 'nsfw');
+		if(nsfwFlag == false){
+			tempMetadata = await bcDB.searchMetadata(nsfwSrchPattern).then(metadataList => {
+        const nsfwTruePattern = utils.translateMetadata('true','nsfw');
+				if(metadataList && metadataList.length !== 0){
+          mapEntries = [];
+          metadataList.map(result => {
+            if(!utils.matches(result.metadata.nsfw, nsfwTruePattern)){
+              result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
+              result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
+              mapEntries.push(result);
+            }
+          });
+          return mapEntries;
+        }
+			})
+		} else {
+			// else, search for all data as we won't return only NSFW results.
+      // we still pass on "nsfw == false" as we want the safe content to be displayed first
+			tempMetadata = await bcDB.searchMetadata(nsfwSrchPattern).then(metadataList => {
+        // and we won't use the strict matching here as we also want NSFW results to be in the result list.
+				return  metadataList.map(result => {
+          result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
+          result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
+          return result;
+        });
+			})
+		}
+		// only keep articles that don't have 'trash' as category
+		metadataResults = tempMetadata.map(result => {
+			if(result.metadata.category !== trashSrchPattern){ return result; }
+		});
+	}
+  const assetResults = metadataResults.map(async mdResult => {
+    return await bcDB.searchAssets(mdResult.id).then(asset => {
+      // if the request body includes a search keyword,  
+      if(search.keyword && search.keyword !== ('' || undefined)){
+        // only returns the asset if it includes the search
+        let isSearchResult = false;
+        asset.filter(asset => {
+          Object.keys(asset.data).map(property => {
+            if(asset.data[property].includes(search.keyword)){
+              isSearchResult = true;
+            }
+          });
+          if(isSearchResult){
+            //asset = asset[0];
+            asset.metadata = mdResult.metadata;
+            return asset;
+          }
         })
-        // if no category provided, just search for all metadata containing the nsfw flag to true 
-        const nsfwSrchPattern = utils.metadataToSrchPattern(search.nsfw, 'nsfw');
-        bcDB.searchAssetsMetadata(nsfwSrchPattern).then(resp => {
-
-            return resp;
-        })
-    } else {
-        // else if the content must be safe for work (meaning: nsfw flag to false or no nsfw flag at all),
-        // just search for all assets that contains nsfw to 'false'
-        const nsfwSrchPattern = utils.metadataToSrchPattern(false, 'nsfw')
-        bcDB.searchAssetsMetadata(nsfwSrchPattern).then(resp => {
-
-            return resp;
-        })
+        // This return have to be here to return the asset out of the map
+        if(isSearchResult){
+          asset = asset[0];
+          return { 
+            id: asset.id,
+            data: asset.data, 
+            metadata: asset.metadata
+          }; 
+        }
+      } else { // TODO: refactor this property ordering in a function
+        // else if no keyword, just return the asset
+        asset = asset[0];
+        asset.metadata = mdResult.metadata;
+        return { 
+          id:asset.id,
+          data: asset.data, 
+          metadata: asset.metadata
+        };
+      }
+    });
+  })
+  // Purging undefined entries from the results
+  // TODO: find a proper way to handle that in a callback directly
+  const results = (await Promise.all(assetResults)).filter(entry => {
+    if(entry !== undefined){
+      return entry;
     }
-    /* could be used if we are able to make several calls be simultaneously
-    while(!typeFound && !filteredResults){
-    } */
-    // TODO: move this to the right place to return resp to the route function
-    if(validResults.length === 0){
-        return 'Not found'
-    }
-}
-
-module.exports.getArticleById = async function(search){
-    // check if input contains article ID
-    return await bcDB.searchAssets(search).then(resp => {
-        // process response using parsestatus
-        // check if the matched string is from the property we want
-        return resp;
-    })
+  })
+  return { status: 200, results};
 }
 
 // TODO: Manage update operations on bigchainDB articles
 
-// IPDB: Opérations CRUD
