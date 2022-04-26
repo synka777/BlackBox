@@ -30,6 +30,7 @@ module.exports.createArticle = async function(data, metadata){
 }
 
 module.exports.searchArticle = async function(search){
+
 	let metadataResults = [];
 	// if req.body has a property 'category', trigger a search on this category
 	if(search.category && search.category !== ('' || undefined)){
@@ -62,16 +63,20 @@ module.exports.searchArticle = async function(search){
 		const nsfwFlag = search.nsfw === false || search.nsfw === undefined ? false : true;
 		// if nsfw is not true, search metadata with the nsfw 'true' pattern
 		const nsfwSrchPattern = utils.translateMetadata(`${nsfwFlag}`, 'nsfw');
-		if(!nsfwFlag){
-			bcDB.searchMetadata(nsfwSrchPattern).then(metadataList => {
+		if(nsfwFlag == false){
+			tempMetadata = await bcDB.searchMetadata(nsfwSrchPattern).then(metadataList => {
         const nsfwTruePattern = utils.translateMetadata('true','nsfw');
-				metadataList.map(result => {
-          if(!utils.matches(result.metadata.nsfw, nsfwTruePattern)){
-            result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
-						result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
-            tempMetadata.push(result);
-          }
-        });
+				if(metadataList && metadataList.length !== 0){
+          mapEntries = [];
+          metadataList.map(result => {
+            if(!utils.matches(result.metadata.nsfw, nsfwTruePattern)){
+              result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
+              result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
+              mapEntries.push(result);
+            }
+          });
+          return mapEntries;
+        }
 			})
 		} else {
 			// else, search for all data as we won't return only NSFW results.

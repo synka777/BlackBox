@@ -2,7 +2,7 @@ const app = require('./app')
 const http = require('http')
 
 
-var port = 3000
+var port = 9229
 app.set('port', port)
 
 
