@@ -3,7 +3,6 @@ const router = express.Router();
 const utils = require('../kernel/utils');
 const { success, error } = require("../kernel/formatResponse");
 const articleController = require('../controllers/articleController');
-const { response } = require('../app');
 
 router.get('/', (req, res) => {
   res.write('Envoie une requête pour créer un nouvel article');
