@@ -38,13 +38,13 @@ module.exports.searchMetadata = async (search, limit = 50) => {
   }).catch(err => console.log('Error caught on call',err)); */
 }
 
-module.exports.searchAssets = async (search) => {
+/* module.exports.searchAssets = async (search) => {
     return this.conn.searchAssets(search);
-}
+} */
 
-module.exports.searchMetadata = async (search) => {
+/* module.exports.searchMetadata = async (search) => {
     return this.conn.searchMetadata(search);
-}
+} */
 
 module.exports.editArticleMetaData = async(assetId, metadata) => {
   const {publicKey, privateKey} = this.keys;

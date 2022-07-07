@@ -147,8 +147,6 @@ module.exports.searchArticle = async function(search){
 // This function will update the score without using any voting mechanism
 
 module.exports.updateScore = async function(assetId, actions){
-  
-  // IF NOT WE COULD USE A METADATA FUNCTION FROM THE bcDB utils file
   bcDB.searchMetadata(assetId).then(results => {
     const mdRes = results[0];
     if(!(actions['upvote'] && actions['downvote'])){
@@ -160,7 +158,6 @@ module.exports.updateScore = async function(assetId, actions){
         if(actions['downvote']){
           mdRes.metadata['score'] = mdRes.metadata['score'] ? --mdRes.metadata['score'] : --i
         }
-        // Trigger update score here
         console.log('Attempting to update article with', mdRes);
         return bcDB.editArticleMetaData(assetId, mdRes.metadata);
       } else {
