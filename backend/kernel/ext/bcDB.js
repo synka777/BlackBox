@@ -7,16 +7,21 @@ const host = process.env.BC_HOST;
 const port = process.env.BC_PORT;
 
 // const identity = new driver.Ed25519Keypair()
-/* module.exports.keys = {
+module.exports.keys = {
   'publicKey':'B9Y5QTx89DzKbaefD9PWFKvAdt91shhYDCjGK2oY5Mc4',
   'privateKey':'GHKczvHhvKVoqHx153MX28c9sG5QiVsGuKxCxXZgefbH'
+};
+
+/* module.exports.generateKeyPair = () => {
+  return new driver.Ed25519Keypair()
 }; */
 
 module.exports.uri = `http://${host}:${port}/api/v1/`;
 module.exports.conn = new driver.Connection(this.uri);
 
 module.exports.createNewAsset = async (data, metadata) => {
-  const {publicKey, privateKey} = this.generateKeyPair();
+  //const {publicKey, privateKey} = this.generateKeyPair();
+  const {publicKey, privateKey} = this.keys;
   const tx = this.createTx(data, metadata, publicKey);
   const signedTx = this.signTx(tx, privateKey);
 
@@ -42,34 +47,30 @@ module.exports.searchMetadata = async (search) => {
 }
 
 module.exports.editArticleMetaData = async(assetId, metadata) => {
-  // Retreive transactionID, stored in the asset or metadata?
-  // If not, need to implement a local db to keep track of article ID / create transaction id
-  // const tx = this.conn.getTransaction(txCreateAliceSimpleSigned.id);
+  const {publicKey, privateKey} = this.keys;
 
-  // The asset ID may be (should be) the same as the create transction ID that created the asset!
-  const tx = this.conn.getTransaction(assetId);
+  return this.conn.getTransaction(assetId).then(transaction => {
+    const transferTx = driver.Transaction.makeTransferTransaction(
+      // signedTx to transfer and output index
+      [{ tx: transaction, output_index: 0 }],
+      [driver.Transaction.makeOutput(driver.Transaction.makeEd25519Condition(publicKey))],
+      metadata
+    );
+    console.log('Transfer Tx:', transferTx);
+  
+    // Fulfill the transaction with the original private key
+    const txTransferSigned = driver.Transaction.signTransaction(transferTx, privateKey);
+    console.log('Tx transfer signed:', txTransferSigned);
+    // Send the transaction to a BigchainDB node
+    return this.conn.postTransactionCommit(txTransferSigned).then(result => {
+      console.log('Result:', result);
+    }).catch(err => console.log('Error caught during postTransactionCommit', err));;
+  }).catch(err => console.log('Error caught during getTransaction', err));
 
   // Prepare the transaction
-  const transferTx = driver.Transaction.makeTransferTransaction(
-    // signedTx to transfer and output index
-    [{ tx: tx, output_index: 0 }],
-    [driver.Transaction.makeOutput(driver.Transaction.makeEd25519Condition(bob.publicKey))],
-    metadata
-  );
-
-  // Fulfill the transaction with the original private key
-  const txTransferSigned = driver.Transaction.signTransaction(transferTx, alice.privateKey);
-
-  // Send the transaction to a BigchainDB node
-  const result = this.conn.postTransactionCommit(txTransferSigned);
-
-  return result; 
 }
 
 
-module.exports.generateKeyPair = () => {
-  return new driver.Ed25519Keypair()
-};
 
 module.exports.createTx = (data, metadata, publicKey) => {
   const output = driver.Transaction.makeOutput(

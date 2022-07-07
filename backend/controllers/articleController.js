@@ -144,33 +144,36 @@ module.exports.searchArticle = async function(search){
   return { status: 200, results};
 }
 
-// TODO: Manage update operations on bigchainDB articles
+// This function will update the score without using any voting mechanism
 
 module.exports.updateScore = async function(assetId, actions){
-  // WHAT CAN WE GET FROM THIS FUNCTION? CAN WE USE IT TO GET THE ARTICLE METADATA?
-  /* const tx = (await Promise.resolve(bcDB.conn.getTransaction(assetId))).then(data =>{
-    console.log('data', data);
-  }); */
   
   // IF NOT WE COULD USE A METADATA FUNCTION FROM THE bcDB utils file
-  const metadata = bcDB.searchMetadata(assetId).then(res => {
-    console.log('res', res);
+  bcDB.searchMetadata(assetId).then(results => {
+    const mdRes = results[0];
+    if(!(actions['upvote'] && actions['downvote'])){
+      if(actions['upvote'] || actions['downvote']){
+        let i = 0
+        if(actions['upvote']){
+          mdRes.metadata['score'] = mdRes.metadata['score'] ? ++mdRes.metadata['score'] : ++i
+        }
+        if(actions['downvote']){
+          mdRes.metadata['score'] = mdRes.metadata['score'] ? --mdRes.metadata['score'] : --i
+        }
+        // Trigger update score here
+        console.log('Attempting to update article with', mdRes);
+        return bcDB.editArticleMetaData(assetId, mdRes.metadata);
+      } else {
+        // return no action found
+      }
+    } else {
+      // Return 400 or 422 in this case
+      // return 
+      console.log('Ambiguous instructions - cannot upvote and downvote at the same time');
+    }
   });
 
-  if(!(actions['upvote'] && actions['downvote'])){
-    if(actions['upvote']){
-      // Increment score
-      console.log('Upvoting article', assetId);
-    }
-    if(actions['downvote']){
-      // Decrement score
-      console.log('Downvoting article', assetId);
-    }
-  } else {
-    // Return 400 or 422 in this case
-    // return 
-    console.log('Ambiguous parameters - cannot upvote and downvote at the same time')
-  }
 
-  //return await bcDB.editArticleMetaData(assetId, metadata)
+
+  
 }
