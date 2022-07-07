@@ -6,7 +6,6 @@ const router = express.Router()
 
 const tokenMgmtRoutes = require("./routes/security/tokenRoutes.js")
 const articleRoutes = require("./routes/articleRoutes.js")
-const articlesRoutes = require("./routes/articlesRoutes.js")
 const voteRoutes = require("./routes/voteRoutes.js")
 
 router.get('/', (req, res) => {
@@ -27,7 +26,6 @@ app.use(cors())
 app.use('/', router)
 app.use('/token', tokenMgmtRoutes)
 app.use('/article', articleRoutes)
-app.use('/articles', articlesRoutes)
 app.use('/vote', voteRoutes)
 
 module.exports = app

@@ -41,6 +41,32 @@ module.exports.searchMetadata = async (search) => {
     return this.conn.searchMetadata(search);
 }
 
+module.exports.editArticleMetaData = async(assetId, metadata) => {
+  // Retreive transactionID, stored in the asset or metadata?
+  // If not, need to implement a local db to keep track of article ID / create transaction id
+  // const tx = this.conn.getTransaction(txCreateAliceSimpleSigned.id);
+
+  // The asset ID may be (should be) the same as the create transction ID that created the asset!
+  const tx = this.conn.getTransaction(assetId);
+
+  // Prepare the transaction
+  const transferTx = driver.Transaction.makeTransferTransaction(
+    // signedTx to transfer and output index
+    [{ tx: tx, output_index: 0 }],
+    [driver.Transaction.makeOutput(driver.Transaction.makeEd25519Condition(bob.publicKey))],
+    metadata
+  );
+
+  // Fulfill the transaction with the original private key
+  const txTransferSigned = driver.Transaction.signTransaction(transferTx, alice.privateKey);
+
+  // Send the transaction to a BigchainDB node
+  const result = this.conn.postTransactionCommit(txTransferSigned);
+
+  return result; 
+}
+
+
 module.exports.generateKeyPair = () => {
   return new driver.Ed25519Keypair()
 };

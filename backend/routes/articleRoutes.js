@@ -90,9 +90,20 @@ router.post('/update', async (req, res) =>{
   } catch (e) {
     return res.status(401).end();
   }
+  // PARSE upvote and downvote booleans, refuse when both upvate and downvote are true
   // Va permettre de mettre à jour le score
-  /* TODO: appeler un controller pour stocker des données dans BigchainDB (pas besoin de orbitdb et IPFS
-    dans ce cas car les données stockées sur IPFS ne seront pas modifiables après création) */
+  await articleController.updateScore(req.body.id, req.body.actions).then(resp => {
+    // WIP IN ARTICLE CONTROLLER EDIT METADATA
+    const response = resp.status['error']
+    ? error('Error', resp.status)
+    : success('Successful', resp.status, resp.results);
+    res.status(response.code);
+    res.write(JSON.stringify(response));
+  }).catch(err => {
+    res.status(500);
+    res.write(JSON.stringify(err));
+  })
+  res.send();
 });
 
 module.exports = router;
