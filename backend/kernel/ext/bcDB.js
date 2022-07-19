@@ -1,6 +1,7 @@
 
 const driver = require('bigchaindb-driver');
-require('dotenv').config()
+require('dotenv').config();
+const { shortid } = require('shortid');
 //const {Ed25519Sha256} = require('crypto-conditions');
 
 const host = process.env.BC_HOST;
@@ -21,6 +22,8 @@ module.exports.conn = new driver.Connection(this.uri);
 
 module.exports.createNewAsset = async (data, metadata) => {
   //const {publicKey, privateKey} = this.generateKeyPair();
+  data.date, metadata.date = new Date();
+  data.tetherId, metadata.tetherId = shortid();
   const {publicKey, privateKey} = this.keys;
   const tx = this.createTx(data, metadata, publicKey);
   const signedTx = this.signTx(tx, privateKey);
@@ -38,17 +41,9 @@ module.exports.searchMetadata = async (search, limit = 50) => {
   }).catch(err => console.log('Error caught on call',err)); */
 }
 
-/* module.exports.searchAssets = async (search) => {
-    return this.conn.searchAssets(search);
-} */
-
-/* module.exports.searchMetadata = async (search) => {
-    return this.conn.searchMetadata(search);
-} */
-
-module.exports.editArticleMetaData = async(assetId, metadata) => {
+module.exports.editArticleMetaData = async(assetId, metadata, tetheringId) => {
   const {publicKey, privateKey} = this.keys;
-
+  metadata.tetherId = tetheringId;
   return this.conn.getTransaction(assetId).then(transaction => {
     const transferTx = driver.Transaction.makeTransferTransaction(
       // signedTx to transfer and output index
@@ -64,7 +59,8 @@ module.exports.editArticleMetaData = async(assetId, metadata) => {
     // Send the transaction to a BigchainDB node
     return this.conn.postTransactionCommit(txTransferSigned).then(result => {
       console.log('Result:', result);
-    }).catch(err => console.log('Error caught during postTransactionCommit', err));;
+      return result;
+    }).catch(err => console.log('Error caught during postTransactionCommit', err));
   }).catch(err => console.log('Error caught during getTransaction', err));
 
   // Prepare the transaction
