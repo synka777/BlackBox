@@ -30,6 +30,10 @@ module.exports.createArticle = async function(data, metadata){
 
 module.exports.searchArticle = async function(search){
 	let metadataResults = [];
+
+  ////////////////////////////
+  // STEP 1: WORK WITH METADATA
+
 	// if req.body has a property 'category', trigger a search on this category
 	if(search.category && search.category !== ('' || undefined)){
     
@@ -122,9 +126,22 @@ module.exports.searchArticle = async function(search){
 	}
 
   ////////////////////////////
-  // TETHER EACH METADATA WITH IT'S ASSET
+  // STEP 1.5: GET LATEST METADATA
 
-  const assetResults = metadataResults.map(async mdResult => {
+  const latestMetadata = [];
+  const tetherIds = metadataResults.map(mdResult => mdResult.metadata.tetherId);
+  const uniqueTetherIds = [...new Set(tetherIds)]
+  uniqueTetherIds.map(tetherId => {
+    const allMetadataForAsset = metadataResults.filter(mdResult => mdResult.metadata.tetherId === tetherId);
+    const assetMetadata = utils.getMostRecent(allMetadataForAsset)[0];
+    latestMetadata.push(assetMetadata);
+  })
+
+  ////////////////////////////
+  // STEP 2: WORK WITH DATA
+
+  // Will tether the data with its metadata
+  const assetResults = latestMetadata.map(async mdResult => {
     return await bcDB.searchAssets(mdResult.id).then(asset => {
       console.log('DEBUG Asset:', asset);
       // if the request body includes a search keyword,  
@@ -181,6 +198,8 @@ module.exports.updateScore = async function(tetherId, actions){
   // that doesn't match anything. The tetherId is there to link assett and metadata,
   // but it also allows us to search for all metadata for a given asset.
   bcDB.searchMetadata(tetherId).then(results => {
+
+    // TODO: Check if the results array is empty
 
     const mdRes = utils.getMostRecent(results)[0];
     console.log('MOST RECENT', mdRes);
