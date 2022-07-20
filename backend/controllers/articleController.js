@@ -175,14 +175,17 @@ module.exports.searchArticle = async function(search){
 }
 
 // This function will update the score without using any voting mechanism
-module.exports.updateScore = async function(assetId, actions){
-  // Search by tetherId and only keep the most recent result, or 
-  // keep searching with assetId
-  bcDB.searchMetadata(assetId).then(results => {
-    // Replace this with a function that gets the most recent result from a list
-    // const mdRes = results[0];
-    const mdRes = utils.getMostRecent(results);
+module.exports.updateScore = async function(tetherId, actions){
+  // Search by tetherId and only keep the most recent result.
+  // We can't search for the assetId as the bigchainDB TRANSFER generates a new metadata ID
+  // that doesn't match anything. The tetherId is there to link assett and metadata,
+  // but it also allows us to search for all metadata for a given asset.
+  bcDB.searchMetadata(tetherId).then(results => {
+
+    const mdRes = utils.getMostRecent(results)[0];
+    console.log('MOST RECENT', mdRes);
     mdRes.metadata['date'] = new Date();
+
     if(!(actions['upvote'] && actions['downvote'])){
       if(actions['upvote'] || actions['downvote']){
         let i = 0
@@ -193,9 +196,10 @@ module.exports.updateScore = async function(assetId, actions){
           mdRes.metadata['score'] = mdRes.metadata['score'] ? --mdRes.metadata['score'] : --i
         }
         console.log('Attempting to update article with', mdRes);
-        bcDB.editArticleMetaData(assetId, mdRes.metadata).then(postTransactionCommitMD => {
+        bcDB.editArticleMetaData(mdRes.id, mdRes.metadata).then(postTransactionCommitMD => {
           // See how to return this info to the client
-          return postTransactionCommitMD.id;
+          console.log('New metadata state', postTransactionCommitMD.metadata)
+          return postTransactionCommitMD
           /* Not really useful if I just want to return the new metadata id
           bcDB.conn.getTransaction(test.id).then(test2 => {
             console.log('Can I get a tx with this new ID?', test2);

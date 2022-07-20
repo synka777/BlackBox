@@ -125,6 +125,6 @@ module.exports.matches = (property, pattern) => {
 
 module.exports.getMostRecent = (metadataList) => {
   return metadataList.sort(
-    (prev, next) => Number(next.date) - Number(prev.date)
-  )[0];
+    (prev, next) => new Date(next.metadata.date) - new Date(prev.metadata.date)
+  );
 } 

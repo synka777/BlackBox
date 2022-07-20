@@ -22,10 +22,11 @@ module.exports.conn = new driver.Connection(this.uri);
 
 module.exports.createNewAsset = async (data, metadata) => {
   //const {publicKey, privateKey} = this.generateKeyPair();
+  const tetherId = shortid.generate();
   data.date = new Date();
-  data.tetherId = shortid.generate();
+  data.tetherId = tetherId;
   metadata.date = new Date();
-  metadata.tetherId = shortid.generate();
+  metadata.tetherId = tetherId;
   const {publicKey, privateKey} = this.keys;
   const tx = this.createTx(data, metadata, publicKey);
   const signedTx = this.signTx(tx, privateKey);
@@ -43,9 +44,9 @@ module.exports.searchMetadata = async (search, limit = 50) => {
   }).catch(err => console.log('Error caught on call',err)); */
 }
 
-module.exports.editArticleMetaData = async(assetId, metadata, tetherId) => {
+module.exports.editArticleMetaData = async(assetId, metadata) => {
   const {publicKey, privateKey} = this.keys;
-  metadata.tetherId = tetherId;
+
   return this.conn.getTransaction(assetId).then(transaction => {
     const transferTx = driver.Transaction.makeTransferTransaction(
       // signedTx to transfer and output index
