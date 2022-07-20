@@ -11,68 +11,87 @@ pour gérer le contenu de la DB.*/
 
 module.exports.createArticle = async function(data, metadata){
 	// Checks if all the necessary properties are included in the request body
-	if(!objIsAModel({...data, ...metadata}, articleSchema, 'Article')){
+	if(!utils.objIsAModel({...data, ...metadata}, articleSchema, 'Article')){
 		// TODO: return proper 400 error
 		return {status: '400'};
 	}
 	// Makes metadata easily searchable before creating the asset
-	metadata.category = translateMetadata(metadata.category, 'category');
-	metadata.nsfw = translateMetadata(metadata.nsfw, 'nsfw');
-	//metadata.type = translateMetadata('article', 'type');
+	metadata.category = utils.translateMetadata(metadata.category, 'category');
+	metadata.nsfw = utils.translateMetadata(metadata.nsfw, 'nsfw');
+	//metadata.type = utils.translateMetadata('article', 'type');
 	return await bcDB.createNewAsset(data, metadata).then(resp => {
 		// Si la requête vers bigchainDB s'exécute correctement il n'y a pas de code de retour
 		// donc on en ajoute un manuellement
 		resp.status = resp.status === undefined ? '200 OK' : resp.status;
-		resp.status = parseStatus(resp.status);
+		resp.status = utils.parseStatus(resp.status);
 		return resp;
 	})
 }
 
 module.exports.searchArticle = async function(search){
-
 	let metadataResults = [];
 	// if req.body has a property 'category', trigger a search on this category
 	if(search.category && search.category !== ('' || undefined)){
-		const catSrchPattern = translateMetadata(search.category, 'category');
+    
+    ////////////////////////////
+    // SEARCH CATEGORY
+		
+    const catSrchPattern = utils.translateMetadata(search.category, 'category');
 		bcDB.searchMetadata(catSrchPattern).then(results => {
       console.log('DEBUG Metadata:', results);
 			results.map(result => {
 				if(!search.nsfw){
+
+          ////////////////////////////
+          // SEARCH CATEGORY: ONLY SFW ARTICLES
+
 					// only add to results when both the query & the current asset
 					// don't include a nsfw flag
 					if(!result.nsfw){
 						// ensures the result is a strict match
-						if(matches(result.metadata.category, catSrchPattern)){
-							result.metadata.category = translateMetadata(result.metadata.category, 'category');
-							result.metadata.nsfw = translateMetadata(result.metadata.nsfw, 'nsfw');
+						if(utils.matches(result.metadata.category, catSrchPattern)){
+							result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
+							result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
 							metadataResults.push(result)
 						}
 					}
 				}else{ // else just add everyting that strictly matches the search
-					if(matches(result.metadata.category, catSrchPattern)){
-						result.metadata.category = translateMetadata(result.metadata.category, 'category');
-						result.metadata.nsfw = translateMetadata(result.metadata.nsfw, 'nsfw');
+
+          ////////////////////////////
+          // SEARCH CATEGORY: NSFW ARTICLES INCLUDED
+
+					if(utils.matches(result.metadata.category, catSrchPattern)){
+						result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
+						result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
 						metadataResults.push(result);
 					}
 				}
 			})
 		})/* .catch(err => console.log('Somthing bad happened in BCDB call', err)) */;
 	} else {
+
+    ////////////////////////////
+    // SEARCH ALL CATEGORIES
+
 		let tempMetadata = [];
-		const trashSrchPattern = translateMetadata('trash', 'category');
+		const trashSrchPattern = utils.translateMetadata('trash', 'category');
 		const nsfwFlag = search.nsfw === false || search.nsfw === undefined ? false : true;
 		// if nsfw is not true, search metadata with the nsfw 'true' pattern
-		const nsfwSrchPattern = translateMetadata(`${nsfwFlag}`, 'nsfw');
+		const nsfwSrchPattern = utils.translateMetadata(`${nsfwFlag}`, 'nsfw');
 		if(nsfwFlag == false){
-			tempMetadata = await bcDB.searchMetadata(nsfwSrchPattern).then(metadataList => {
+
+      ////////////////////////////
+      // ALL CATEGORIES: ONLY SFW ARTICLES
+			
+      tempMetadata = await bcDB.searchMetadata(nsfwSrchPattern).then(metadataList => {
         console.log('DEBUG Metadata:', metadataList);
-        const nsfwTruePattern = translateMetadata('true','nsfw');
+        const nsfwTruePattern = utils.translateMetadata('true','nsfw');
 				if(metadataList && metadataList.length !== 0){
           mapEntries = [];
           metadataList.map(result => {
-            if(!matches(result.metadata.nsfw, nsfwTruePattern)){
-              result.metadata.category = translateMetadata(result.metadata.category, 'category');
-              result.metadata.nsfw = translateMetadata(result.metadata.nsfw, 'nsfw');
+            if(!utils.matches(result.metadata.nsfw, nsfwTruePattern)){
+              result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
+              result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
               mapEntries.push(result);
             }
           });
@@ -80,14 +99,18 @@ module.exports.searchArticle = async function(search){
         }
 			})
 		} else {
+
+      ////////////////////////////
+      // ALL CATEGORIES: NSFW ARTICLES INCLUDED
+
 			// else, search for all data as we won't return only NSFW results.
       // we still pass on "nsfw == false" as we want the safe content to be displayed first
 			tempMetadata = await bcDB.searchMetadata(nsfwSrchPattern).then(metadataList => {
         console.log('DEBUG Metadata:', metadataList);
         // and we won't use the strict matching here as we also want NSFW results to be in the result list.
 				return  metadataList.map(result => {
-          result.metadata.category = translateMetadata(result.metadata.category, 'category');
-          result.metadata.nsfw = translateMetadata(result.metadata.nsfw, 'nsfw');
+          result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
+          result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
           return result;
         });
 			})
@@ -97,6 +120,10 @@ module.exports.searchArticle = async function(search){
 			if(result.metadata.category !== trashSrchPattern){ return result; }
 		});
 	}
+
+  ////////////////////////////
+  // TETHER EACH METADATA WITH IT'S ASSET
+
   const assetResults = metadataResults.map(async mdResult => {
     return await bcDB.searchAssets(mdResult.id).then(asset => {
       console.log('DEBUG Asset:', asset);
@@ -148,7 +175,6 @@ module.exports.searchArticle = async function(search){
 }
 
 // This function will update the score without using any voting mechanism
-
 module.exports.updateScore = async function(assetId, actions){
   // Search by tetherId and only keep the most recent result, or 
   // keep searching with assetId
@@ -156,6 +182,7 @@ module.exports.updateScore = async function(assetId, actions){
     // Replace this with a function that gets the most recent result from a list
     // const mdRes = results[0];
     const mdRes = utils.getMostRecent(results);
+    mdRes.metadata['date'] = new Date();
     if(!(actions['upvote'] && actions['downvote'])){
       if(actions['upvote'] || actions['downvote']){
         let i = 0

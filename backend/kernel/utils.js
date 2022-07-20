@@ -6,6 +6,7 @@ const { stringify } = require('nodemon/lib/utils');
 
 module.exports.jwtKey = 'my_secret_key';
 
+  ////////////////////////////
   ////////////// Token
 module.exports.verifyToken = (res, token) => {
   try {
