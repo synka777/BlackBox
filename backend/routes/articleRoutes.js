@@ -13,6 +13,10 @@ router.get('/', (req, res) => {
   res.send();
 });
 
+
+  ////////////////////////////////
+  ////////////// No voting system
+
 router.post('/create', async (req, res) => {
   const token = req.cookies.token;
   try {
@@ -105,5 +109,12 @@ router.post('/update', async (req, res) =>{
   })
   res.send();
 });
+
+
+  ////////////////////////////////////////////////
+  ////////////// Voting system protected functions
+
+
+
 
 module.exports = router;

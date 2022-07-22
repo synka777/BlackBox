@@ -202,7 +202,7 @@ module.exports.updateScore = async function(tetherId, actions){
     // TODO: Check if the results array is empty
 
     const mdRes = utils.getMostRecent(results)[0];
-    console.log('MOST RECENT', mdRes);
+
     mdRes.metadata['date'] = new Date();
 
     if(!(actions['upvote'] && actions['downvote'])){
@@ -235,7 +235,19 @@ module.exports.updateScore = async function(tetherId, actions){
     }
   });
 
+module.exports.updateArticle = async (metadata) => {
 
+  bcDB.editArticleMetaData(metadata.id, metadata.metadata).then(postTransactionCommitMD => {
+    // See how to return this info to the client
+    console.log('New metadata state', postTransactionCommitMD.metadata)
+    return postTransactionCommitMD
+    /* Not really useful if I just want to return the new metadata id
+    bcDB.conn.getTransaction(test.id).then(test2 => {
+      console.log('Can I get a tx with this new ID?', test2);
+    }) */
+    
+  });
+}
 
   
 }
