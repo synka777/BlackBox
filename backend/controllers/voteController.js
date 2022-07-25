@@ -6,14 +6,17 @@ const articleController = require('../controllers/articleController');
 module.exports.processVotes = async (request) => {
   // STEP 1: GET METADATA TO UPDATE
   await bcDB.searchMetadata(request.tetherId).then(results => {
+    // return 404 if the results array is empty
     const oldMetadata = utils.getMostRecent(results);
     // STEP 2: EDIT METADATA
     const voteObject = getCurrentVotes(oldMetadata, request.votes);
     if(voteObject.updated){
-      oldMetadata.votes = voteObject.votes;
+      oldMetadata.metadata.votes = voteObject.votes;
       const metadataObject = getNewMetadata(oldMetadata);
+      console.log('MDO', metadataObject)
       if(metadataObject.updated){
         // STEP 3: UPDATE THE ARTICLE
+        console.log('passing object',metadataObject.metadata)
         return articleController.updateArticle(oldMetadata.id, metadataObject.metadata).then(resp => {
           console.log('Response',resp);
           return resp;
@@ -49,7 +52,6 @@ getCurrentVotes = (oldMetadata, requested) => {
     'categories': [], trash: 0, nsfw: 0
   };
   let updated = false;
-
   // Update the old votes with the requested changes
   if(requested.trash && requested.trash != oldMetadata.trash){
     ++oldVotes.trash;
@@ -66,19 +68,20 @@ getCurrentVotes = (oldMetadata, requested) => {
       // We check if it is found in the categories array.
       oldVotes.categories.map(cat => {
         // If so, we increment it's vote count by one.
-        if(cat.name === requested.category){
+        if(cat.name === utils.translateMetadata(requested.category, 'category')){
           ++cat.count;
           categoryFound = true;
         }
       });
       // else if we didn't find it, we add it to the array with 1 of score.
       if(!categoryFound){
+        const catNamePattern = utils.translateMetadata(requested.category, 'category');
         oldVotes.categories.push(
           {
-            'name': requested.category, // TODO: CONVERT TO PATTERN
+            'name': catNamePattern, // TODO: CONVERT TO PATTERN
             'count': 14 // set this back to 1 when everything will be done
           }
-        )
+        );
       }
       updated = true;
     }
@@ -87,22 +90,23 @@ getCurrentVotes = (oldMetadata, requested) => {
   return {votes, updated};
 }
 
-getNewMetadata = (oldMetadata) => {
+getNewMetadata = (oldMd) => {
   let updated = false;
   const catThreshold = process.env.VOTE_CAT_THRESHOLD;
   const trashThreshold = process.env.VOTE_TRASH_THRESHOLD;
   const reportThreshold = process.env.VOTE_REPORT_THRESHOLD;
 
   // Threshold checks
-  const sendToTrash = oldMetadata.votes.trash >= trashThreshold ? true : false;
-  const setToNSFW = oldMetadata.votes.nsfw >= reportThreshold ? true : false;
-  const electedCategory = oldMetadata.votes.categories.filter(cat => 
-    cat.count >= catThreshold ? cat : undefined
+  const sendToTrash = oldMd.metadata.votes.trash >= trashThreshold ? true : false;
+  const setToNSFW = oldMd.metadata.votes.nsfw >= reportThreshold ? true : false;
+  const electedCategory = oldMd.metadata.votes.categories.filter(cat => 
+    cat.count >= catThreshold
   );
-  const metadata = oldMetadata.metadata;
+
+  const metadata = oldMd.metadata;
   // Edit metadata based on the votes
   if(electedCategory.length != 0){
-    metadata.category = electedCategory; 
+    metadata.category = electedCategory[0].name; 
     updated = true;
   }
   if(sendToTrash){

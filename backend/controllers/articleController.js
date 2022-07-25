@@ -68,7 +68,6 @@ module.exports.searchArticle = async function(search){
 						result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
 						result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
 						metadataResults.push(result);
-            console.log('MDR',metadataResults);
 					}
 				}
 			})
@@ -132,8 +131,6 @@ module.exports.searchArticle = async function(search){
   // const OGMetadata = [];
   const tetheredMd = [];
   const tetherIds = metadataResults.map(mdResult => mdResult.metadata.tetherId);
-  console.log('MDR2',metadataResults);
-  console.log('tetherIds', tetherIds)
   const uniqueTetherIds = [...new Set(tetherIds)];
   uniqueTetherIds.map(tetherId => {
     // Get all metadata with a given tetherId
@@ -208,21 +205,21 @@ module.exports.updateScore = async function(tetherId, actions){
 
     // TODO: Check if the results array is empty
 
-    const mdRes = utils.getMostRecent(results);
+    const latestMd = utils.getMostRecent(results);
 
-    mdRes.metadata['date'] = new Date();
+    latestMd.metadata['date'] = new Date();
 
     if(!(actions['upvote'] && actions['downvote'])){
       if(actions['upvote'] || actions['downvote']){
         let i = 0
         if(actions['upvote']){
-          mdRes.metadata['score'] = mdRes.metadata['score'] ? ++mdRes.metadata['score'] : ++i
+          latestMd.metadata['score'] = latestMd.metadata['score'] ? ++latestMd.metadata['score'] : ++i
         }
         if(actions['downvote']){
-          mdRes.metadata['score'] = mdRes.metadata['score'] ? --mdRes.metadata['score'] : --i
+          latestMd.metadata['score'] = latestMd.metadata['score'] ? --latestMd.metadata['score'] : --i
         }
-        console.log('Attempting to update article with', mdRes);
-        bcDB.editArticleMetaData(mdRes.id, mdRes.metadata).then(postTransactionCommitMD => {
+        console.log('Attempting to update article with', latestMd);
+        bcDB.editArticleMetaData(latestMd.id, latestMd.metadata).then(postTransactionCommitMD => {
 
           // TODO: Handle errors from bcDB func here
           // See how to return this info to the client
@@ -246,10 +243,7 @@ module.exports.updateScore = async function(tetherId, actions){
 }
 
 module.exports.updateArticle = async (id, metadata) => {
-  console.log('CAN RICHARD FUNK', id, metadata)
-  
-  bcDB.editArticleMetaData(id, metadata.metadata).then(postTransactionCommitMD => {
-
+    bcDB.editArticleMetaData(id, metadata).then(postTransactionCommitMD => {
     // TODO: Handle errors from bcDB func here
     // See how to return this info to the client
     console.log('New metadata state', postTransactionCommitMD)

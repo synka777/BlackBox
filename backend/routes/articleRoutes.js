@@ -69,7 +69,6 @@ router.post('/search', async (req, res) => {
     return res.status(401).end();
   }
   await articleController.searchArticle(req.body).then(resp => {
-    console.log('this famous reponse', resp)
     // TODO: adapt this condition to handle errors that can actually be returned
     // by the controller when processing bcDB requests
     const response = resp.status['error']
@@ -84,7 +83,7 @@ router.post('/search', async (req, res) => {
   res.send();
 });
 
-router.post('/update', async (req, res) =>{
+router.post('/score', async (req, res) =>{
   const token = req.cookies.token;
   try {
     const payload = utils.verifyToken(res, token);
