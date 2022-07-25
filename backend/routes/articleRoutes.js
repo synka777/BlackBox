@@ -69,6 +69,7 @@ router.post('/search', async (req, res) => {
     return res.status(401).end();
   }
   await articleController.searchArticle(req.body).then(resp => {
+    console.log('this famous reponse', resp)
     // TODO: adapt this condition to handle errors that can actually be returned
     // by the controller when processing bcDB requests
     const response = resp.status['error']

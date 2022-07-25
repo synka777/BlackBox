@@ -41,8 +41,8 @@ module.exports.searchArticle = async function(search){
     // SEARCH CATEGORY
 		
     const catSrchPattern = utils.translateMetadata(search.category, 'category');
-		bcDB.searchMetadata(catSrchPattern).then(results => {
-      console.log('DEBUG Metadata:', results);
+		await bcDB.searchMetadata(catSrchPattern).then(results => {
+      console.log('DEBUG Metadata by cat:', results);
 			results.map(result => {
 				if(!search.nsfw){
 
@@ -68,6 +68,7 @@ module.exports.searchArticle = async function(search){
 						result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
 						result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
 						metadataResults.push(result);
+            console.log('MDR',metadataResults);
 					}
 				}
 			})
@@ -88,7 +89,7 @@ module.exports.searchArticle = async function(search){
       // ALL CATEGORIES: ONLY SFW ARTICLES
 			
       tempMetadata = await bcDB.searchMetadata(nsfwSrchPattern).then(metadataList => {
-        console.log('DEBUG Metadata:', metadataList);
+        console.log('DEBUG Metadata SFW:', metadataList);
         const nsfwTruePattern = utils.translateMetadata('true','nsfw');
 				if(metadataList && metadataList.length !== 0){
           mapEntries = [];
@@ -110,7 +111,7 @@ module.exports.searchArticle = async function(search){
 			// else, search for all data as we won't return only NSFW results.
       // we still pass on "nsfw == false" as we want the safe content to be displayed first
 			tempMetadata = await bcDB.searchMetadata(nsfwSrchPattern).then(metadataList => {
-        console.log('DEBUG Metadata:', metadataList);
+        console.log('DEBUG Metadata w/ NSFW:', metadataList);
         // and we won't use the strict matching here as we also want NSFW results to be in the result list.
 				return  metadataList.map(result => {
           result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
@@ -124,26 +125,32 @@ module.exports.searchArticle = async function(search){
 			if(result.metadata.category !== trashSrchPattern){ return result; }
 		});
 	}
-
+  
   ////////////////////////////
   // STEP 1.5: GET LATEST METADATA
-
-  const latestMetadata = [];
+  // const latestMetadata = [];
+  // const OGMetadata = [];
+  const tetheredMd = [];
   const tetherIds = metadataResults.map(mdResult => mdResult.metadata.tetherId);
-  const uniqueTetherIds = [...new Set(tetherIds)]
+  console.log('MDR2',metadataResults);
+  console.log('tetherIds', tetherIds)
+  const uniqueTetherIds = [...new Set(tetherIds)];
   uniqueTetherIds.map(tetherId => {
+    // Get all metadata with a given tetherId
     const allMetadataForAsset = metadataResults.filter(mdResult => mdResult.metadata.tetherId === tetherId);
-    const assetMetadata = utils.getMostRecent(allMetadataForAsset)[0];
-    latestMetadata.push(assetMetadata);
-  })
+    const orig = utils.getOG(allMetadataForAsset);
+    const latest = utils.getMostRecent(allMetadataForAsset);
+    tetheredMd.push({ orig, latest });
+  });
 
   ////////////////////////////
   // STEP 2: WORK WITH DATA
 
   // Will tether the data with its metadata
-  const assetResults = latestMetadata.map(async mdResult => {
-    return await bcDB.searchAssets(mdResult.id).then(asset => {
+  const assetResults = tetheredMd.map(async mdObj => {
+    return await bcDB.searchAssets(mdObj.orig.id).then(asset => {
       console.log('DEBUG Asset:', asset);
+      console.log('DEBUG mdObj:', mdObj);
       // if the request body includes a search keyword,  
       if(search.keyword && search.keyword !== ('' || undefined)){
         // only returns the asset if it includes the search
@@ -156,7 +163,7 @@ module.exports.searchArticle = async function(search){
           });
           if(isSearchResult){
             //asset = asset[0];
-            asset.metadata = mdResult.metadata;
+            asset.metadata = mdObj.latest.metadata;
             return asset;
           }
         })
@@ -172,7 +179,7 @@ module.exports.searchArticle = async function(search){
       } else { // TODO: refactor this property ordering in a function
         // else if no keyword, just return the asset
         asset = asset[0];
-        asset.metadata = mdResult.metadata;
+        asset.metadata = mdObj.latest.metadata;
         return { 
           id:asset.id,
           data: asset.data, 
@@ -201,7 +208,7 @@ module.exports.updateScore = async function(tetherId, actions){
 
     // TODO: Check if the results array is empty
 
-    const mdRes = utils.getMostRecent(results)[0];
+    const mdRes = utils.getMostRecent(results);
 
     mdRes.metadata['date'] = new Date();
 
@@ -216,8 +223,10 @@ module.exports.updateScore = async function(tetherId, actions){
         }
         console.log('Attempting to update article with', mdRes);
         bcDB.editArticleMetaData(mdRes.id, mdRes.metadata).then(postTransactionCommitMD => {
+
+          // TODO: Handle errors from bcDB func here
           // See how to return this info to the client
-          console.log('New metadata state', postTransactionCommitMD.metadata)
+          console.log('New metadata state', postTransactionCommitMD)
           return postTransactionCommitMD
           /* Not really useful if I just want to return the new metadata id
           bcDB.conn.getTransaction(test.id).then(test2 => {
@@ -234,12 +243,16 @@ module.exports.updateScore = async function(tetherId, actions){
       console.log('Ambiguous instructions - cannot upvote and downvote at the same time');
     }
   });
+}
 
-module.exports.updateArticle = async (metadata) => {
+module.exports.updateArticle = async (id, metadata) => {
+  console.log('CAN RICHARD FUNK', id, metadata)
+  
+  bcDB.editArticleMetaData(id, metadata.metadata).then(postTransactionCommitMD => {
 
-  bcDB.editArticleMetaData(metadata.id, metadata.metadata).then(postTransactionCommitMD => {
+    // TODO: Handle errors from bcDB func here
     // See how to return this info to the client
-    console.log('New metadata state', postTransactionCommitMD.metadata)
+    console.log('New metadata state', postTransactionCommitMD)
     return postTransactionCommitMD
     /* Not really useful if I just want to return the new metadata id
     bcDB.conn.getTransaction(test.id).then(test2 => {
@@ -247,7 +260,4 @@ module.exports.updateArticle = async (metadata) => {
     }) */
     
   });
-}
-
-  
 }

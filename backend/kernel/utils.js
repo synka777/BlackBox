@@ -124,7 +124,15 @@ module.exports.matches = (property, pattern) => {
 }
 
 module.exports.getMostRecent = (metadataList) => {
-  return metadataList.sort(
+  const sortedList = metadataList.sort(
     (prev, next) => new Date(next.metadata.date) - new Date(prev.metadata.date)
   );
+  return sortedList[0];
+} 
+
+module.exports.getOG = (metadataList) => {
+  const sortedList = metadataList.sort(
+    (prev, next) => new Date(prev.metadata.date) - new Date(next.metadata.date)
+  );
+  return sortedList[0];
 } 

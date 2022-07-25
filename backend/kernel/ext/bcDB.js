@@ -65,8 +65,6 @@ module.exports.editArticleMetaData = async(assetId, metadata) => {
       return result;
     }).catch(err => console.log('Error caught during postTransactionCommit', err));
   }).catch(err => console.log('Error caught during getTransaction', err));
-
-  // Prepare the transaction
 }
 
 module.exports.createTx = (data, metadata, publicKey) => {
