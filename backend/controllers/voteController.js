@@ -6,22 +6,19 @@ const articleController = require('../controllers/articleController');
 module.exports.processVotes = async (request) => {
   // STEP 1: GET METADATA TO UPDATE
   await bcDB.searchMetadata(request.tetherId).then(results => {
-    // return 404 if the results array is empty
-    const oldMetadata = utils.getMostRecent(results);
+    // TODO: return 404 if the results array is empty
+    const oldMd = utils.getMostRecent(results);
     // STEP 2: EDIT METADATA
-    const voteObject = getCurrentVotes(oldMetadata, request.votes);
+    const voteObject = getCurrentVotes(oldMd, request.votes);
     if(voteObject.updated){
-      oldMetadata.metadata.votes = voteObject.votes;
-      const metadataObject = getNewMetadata(oldMetadata);
-      console.log('MDO', metadataObject)
-      if(metadataObject.updated){
-        // STEP 3: UPDATE THE ARTICLE
-        console.log('passing object',metadataObject.metadata)
-        return articleController.updateArticle(oldMetadata.id, metadataObject.metadata).then(resp => {
-          console.log('Response',resp);
-          return resp;
-        });
-      }
+      oldMd.metadata.votes = voteObject.votes;
+      const metadata = getNewMetadata(oldMd);
+      // STEP 3: UPDATE THE ARTICLE
+      return articleController.updateArticle(oldMd.id, metadata).then(resp => {
+        // TODO: return something to validate the operation
+        console.log('Response',resp);
+        return resp;
+      });
     }
   })
 }
@@ -45,19 +42,19 @@ module.exports.processVotes = async (request) => {
 		'nsfw': 1
 	}
 } */
-getCurrentVotes = (oldMetadata, requested) => {
+getCurrentVotes = (oldMd, requested) => {
   // TODO: Integrate mongoose models in this function.
   // TODO: Find a way to return properly
-  const oldVotes = oldMetadata.votes ? oldMetadata.votes : {
+  const oldVotes = oldMd.metadata.votes ? oldMd.metadata.votes : {
     'categories': [], trash: 0, nsfw: 0
   };
   let updated = false;
   // Update the old votes with the requested changes
-  if(requested.trash && requested.trash != oldMetadata.trash){
+  if(requested.trash && requested.trash != oldMd.metadata.trash){
     ++oldVotes.trash;
     updated = true;
   }
-  if(requested.nsfw && requested.nsfw != oldMetadata.nsfw){
+  if(requested.nsfw && requested.nsfw != oldMd.metadata.nsfw){
     ++oldVotes.nsfw;
     updated = true;
   }
@@ -79,7 +76,7 @@ getCurrentVotes = (oldMetadata, requested) => {
         oldVotes.categories.push(
           {
             'name': catNamePattern, // TODO: CONVERT TO PATTERN
-            'count': 14 // set this back to 1 when everything will be done
+            'count': 1 // set this back to 1 when everything will be done
           }
         );
       }
@@ -91,7 +88,7 @@ getCurrentVotes = (oldMetadata, requested) => {
 }
 
 getNewMetadata = (oldMd) => {
-  let updated = false;
+
   const catThreshold = process.env.VOTE_CAT_THRESHOLD;
   const trashThreshold = process.env.VOTE_TRASH_THRESHOLD;
   const reportThreshold = process.env.VOTE_REPORT_THRESHOLD;
@@ -106,17 +103,19 @@ getNewMetadata = (oldMd) => {
   const metadata = oldMd.metadata;
   // Edit metadata based on the votes
   if(electedCategory.length != 0){
-    metadata.category = electedCategory[0].name; 
-    updated = true;
+    metadata.category = electedCategory[0].name;
+    metadata.votes.categories = [];
   }
   if(sendToTrash){
-    metadata.trash = true; // TODO: CONVERT TO PATTERN
-    updated = true;
+    metadata.category = utils.translateMetadata('trash', 'category');
+    metadata.votes.categories = [];
+    metadata.votes.trash = 0;
   }
   if(setToNSFW){
     metadata.nsfw = true; // TODO: CONVERT TO PATTERN
-    updated = true;
   }
 
-  return {metadata, updated};
+  metadata.date = new Date();
+
+  return metadata;
 }

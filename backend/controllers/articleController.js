@@ -77,6 +77,7 @@ module.exports.searchArticle = async function(search){
     ////////////////////////////
     // SEARCH ALL CATEGORIES
 
+    search.category = '';
 		let tempMetadata = [];
 		const trashSrchPattern = utils.translateMetadata('trash', 'category');
 		const nsfwFlag = search.nsfw === false || search.nsfw === undefined ? false : true;
@@ -127,27 +128,62 @@ module.exports.searchArticle = async function(search){
   
   ////////////////////////////
   // STEP 1.5: GET LATEST METADATA
-  // const latestMetadata = [];
-  // const OGMetadata = [];
-  const tetheredMd = [];
+  
   const tetherIds = metadataResults.map(mdResult => mdResult.metadata.tetherId);
   const uniqueTetherIds = [...new Set(tetherIds)];
-  uniqueTetherIds.map(tetherId => {
-    // Get all metadata with a given tetherId
+  
+  // Get all metadata from previous filters, with a given tetherId
+  const tetheredMd = await Promise.all(uniqueTetherIds.map(async tetherId => {
     const allMetadataForAsset = metadataResults.filter(mdResult => mdResult.metadata.tetherId === tetherId);
-    const orig = utils.getOG(allMetadataForAsset);
-    const latest = utils.getMostRecent(allMetadataForAsset);
-    tetheredMd.push({ orig, latest });
-  });
+    const assumedLatest = utils.getMostRecent(allMetadataForAsset);
+
+    // Makes sure that newer metadata doesn't exist with other parameters for the given asset
+    return bcDB.searchMetadata(tetherId).then(tetherIdResults => {
+      const latestMetadata = utils.getMostRecent(tetherIdResults);
+      latestMetadata.metadata.category = utils.translateMetadata(latestMetadata.metadata.category, 'category'); 
+      latestMetadata.metadata.nsfw = utils.translateMetadata(latestMetadata.metadata.nsfw, 'nsfw');
+
+      // If the metadata are actually up-to-date, keep it for further processing
+      if(latestMetadata.metadata.date === assumedLatest.metadata.date ){
+        const orig = utils.getOG(allMetadataForAsset);
+        return { orig, latest: assumedLatest };
+      }
+      // Else if the metadata is actually not up-to-date
+      if(latestMetadata.metadata.date > assumedLatest.metadata.date){
+        // Check if the actual up-to-date metadata still matches the user query
+        let categoryChanged = false;
+        let nsfwStateChanged = false;
+        Object.getOwnPropertyNames(search).map(prop => {
+          if(prop === 'category'
+          && (search[prop] !== '')
+          && search[prop] !== latestMetadata.metadata[prop]){
+            categoryChanged = true;
+          }
+          if(prop === 'nsfw'
+          && search[prop] !== latestMetadata.metadata[prop]){
+            nsfwStateChanged = true;
+          }
+        });
+        // If the actual up-to-date metadata still has the same criterias as the search query,
+        // we keep it instead of the metadata that hasn't been updated.
+        if(!categoryChanged && !nsfwStateChanged){
+          const orig = utils.getOG(allMetadataForAsset);
+          return { orig, latest: latestMetadata };
+        } else {
+          return;
+        }
+      }
+    });
+  }));
 
   ////////////////////////////
   // STEP 2: WORK WITH DATA
 
   // Will tether the data with its metadata
-  const assetResults = tetheredMd.map(async mdObj => {
+  const assetResults = await Promise.all(tetheredMd.map(async mdObj => {
+    if(!mdObj){ return; }
     return await bcDB.searchAssets(mdObj.orig.id).then(asset => {
       console.log('DEBUG Asset:', asset);
-      console.log('DEBUG mdObj:', mdObj);
       // if the request body includes a search keyword,  
       if(search.keyword && search.keyword !== ('' || undefined)){
         // only returns the asset if it includes the search
@@ -175,6 +211,7 @@ module.exports.searchArticle = async function(search){
         }
       } else { // TODO: refactor this property ordering in a function
         // else if no keyword, just return the asset
+        console.log('DEBUG mdObj:', mdObj);
         asset = asset[0];
         asset.metadata = mdObj.latest.metadata;
         return { 
@@ -184,14 +221,17 @@ module.exports.searchArticle = async function(search){
         };
       }
     });
-  })
+  }));
+
   // Purging undefined entries from the results
   // TODO: find a proper way to handle that in a callback directly
-  const results = (await Promise.all(assetResults)).filter(entry => {
+  const results = assetResults.filter(entry => {
+    console.log('ENTRY',entry);
     if(entry !== undefined){
       return entry;
     }
-  })
+  });
+  if( results.length === 0){ return {status: 404}; }
   return { status: 200, results};
 }
 
@@ -246,7 +286,7 @@ module.exports.updateArticle = async (id, metadata) => {
     bcDB.editArticleMetaData(id, metadata).then(postTransactionCommitMD => {
     // TODO: Handle errors from bcDB func here
     // See how to return this info to the client
-    console.log('New metadata state', postTransactionCommitMD)
+    console.log('New metadata state', postTransactionCommitMD.metadata);
     return postTransactionCommitMD
     /* Not really useful if I just want to return the new metadata id
     bcDB.conn.getTransaction(test.id).then(test2 => {

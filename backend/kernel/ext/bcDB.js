@@ -45,7 +45,6 @@ module.exports.searchMetadata = async (search, limit = 50) => {
 }
 
 module.exports.editArticleMetaData = async(metadataId, metadata) => {
-  console.log('GOT', metadataId, metadata);
   const {publicKey, privateKey} = this.keys;
 
   return this.conn.getTransaction(metadataId).then(transaction => {
@@ -58,7 +57,6 @@ module.exports.editArticleMetaData = async(metadataId, metadata) => {
   
     // Fulfill the transaction with the original private key
     const txTransferSigned = driver.Transaction.signTransaction(transferTx, privateKey);
-    console.log('Tx transfer signed:', txTransferSigned);
     // Send the transaction to a BigchainDB node
     return this.conn.postTransactionCommit(txTransferSigned).then(result => {
       return result;
