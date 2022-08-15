@@ -145,7 +145,7 @@ module.exports.searchArticle = async function(search){
 
       // If the metadata are actually up-to-date, keep it for further processing
       if(latestMetadata.metadata.date === assumedLatest.metadata.date ){
-        const orig = utils.getOG(allMetadataForAsset);
+        const orig = utils.getOG(tetherIdResults);
         return { orig, latest: assumedLatest };
       }
       // Else if the metadata is actually not up-to-date
@@ -226,7 +226,6 @@ module.exports.searchArticle = async function(search){
   // Purging undefined entries from the results
   // TODO: find a proper way to handle that in a callback directly
   const results = assetResults.filter(entry => {
-    console.log('ENTRY',entry);
     if(entry !== undefined){
       return entry;
     }
