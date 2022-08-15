@@ -230,8 +230,8 @@ module.exports.searchArticle = async function(search){
       return entry;
     }
   });
-  if( results.length === 0){ return {status: 404}; }
-  return { status: 200, results};
+  if(results.length === 0){ return { status: 404 }; }
+  return { status: 200, results };
 }
 
 // This function will update the score without using any voting mechanism
@@ -243,7 +243,7 @@ module.exports.updateScore = async function(tetherId, actions){
   return bcDB.searchMetadata(tetherId).then(results => {
     // if nothing is found with the given tetherId, return status 404
     if(results.length === 0){
-      return {status: 404};
+      return { status: 404 };
     }
 
     const latestMd = utils.getMostRecent(results);
@@ -269,25 +269,19 @@ module.exports.updateScore = async function(tetherId, actions){
         });
       } else {
         // return no action found
-        return {status: 400};
+        return { status: 400 };
       }
     } else {
       // Return 400 or 422 in this case
-      return {status: 400/*,  message: 'Cannot upvote and downvote at the same time' */};
+      return { status: 400/*,  message: 'Cannot upvote and downvote at the same time' */ };
     }
   });
 }
 
 module.exports.updateArticle = async (id, metadata) => {
-    bcDB.editArticleMetaData(id, metadata).then(postTransactionCommitMD => {
+    return bcDB.editArticleMetaData(id, metadata).then(postTransactionCommitMD => {
     // TODO: Handle errors from bcDB func here
-    // See how to return this info to the client
-    console.log('New metadata state', postTransactionCommitMD.metadata);
-    return postTransactionCommitMD
-    /* Not really useful if I just want to return the new metadata id
-    bcDB.conn.getTransaction(test.id).then(test2 => {
-      console.log('Can I get a tx with this new ID?', test2);
-    }) */
-    
+    console.log('Updated metadata for article', metadata.tetherId+':', postTransactionCommitMD.metadata);
+    return postTransactionCommitMD.metadata;    
   });
 }

@@ -5,8 +5,10 @@ const articleController = require('../controllers/articleController');
 
 module.exports.processVotes = async (request) => {
   // STEP 1: GET METADATA TO UPDATE
-  await bcDB.searchMetadata(request.tetherId).then(results => {
-    // TODO: return 404 if the results array is empty
+  return await bcDB.searchMetadata(request.tetherId).then(results => {
+    if(results.length === 0){
+      return { status: 404 };
+    }
     const oldMd = utils.getMostRecent(results);
     // STEP 2: EDIT METADATA
     const voteObject = getCurrentVotes(oldMd, request.votes);
@@ -15,9 +17,11 @@ module.exports.processVotes = async (request) => {
       const metadata = getNewMetadata(oldMd);
       // STEP 3: UPDATE THE ARTICLE
       return articleController.updateArticle(oldMd.id, metadata).then(resp => {
-        // TODO: return something to validate the operation
-        console.log('Response',resp);
-        return resp;
+        if(resp){
+          return { status: 200, metadata: resp };
+        } else {
+          return;
+        }
       });
     }
   })
