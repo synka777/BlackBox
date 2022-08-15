@@ -240,12 +240,13 @@ module.exports.updateScore = async function(tetherId, actions){
   // We can't search for the assetId as the bigchainDB TRANSFER generates a new metadata ID
   // that doesn't match anything. The tetherId is there to link assett and metadata,
   // but it also allows us to search for all metadata for a given asset.
-  bcDB.searchMetadata(tetherId).then(results => {
-
-    // TODO: Check if the results array is empty
+  return bcDB.searchMetadata(tetherId).then(results => {
+    // if nothing is found with the given tetherId, return status 404
+    if(results.length === 0){
+      return {status: 404};
+    }
 
     const latestMd = utils.getMostRecent(results);
-
     latestMd.metadata['date'] = new Date();
 
     if(!(actions['upvote'] && actions['downvote'])){
@@ -257,26 +258,22 @@ module.exports.updateScore = async function(tetherId, actions){
         if(actions['downvote']){
           latestMd.metadata['score'] = latestMd.metadata['score'] ? --latestMd.metadata['score'] : --i
         }
-        console.log('Attempting to update article with', latestMd);
-        bcDB.editArticleMetaData(latestMd.id, latestMd.metadata).then(postTransactionCommitMD => {
 
-          // TODO: Handle errors from bcDB func here
-          // See how to return this info to the client
-          console.log('New metadata state', postTransactionCommitMD)
-          return postTransactionCommitMD
-          /* Not really useful if I just want to return the new metadata id
-          bcDB.conn.getTransaction(test.id).then(test2 => {
-            console.log('Can I get a tx with this new ID?', test2);
-          }) */
-          
+        return bcDB.editArticleMetaData(latestMd.id, latestMd.metadata).then(postTransactionCommitMD => {
+          console.log('Updated score for article', tetherId+':', postTransactionCommitMD.metadata.score);
+          if(postTransactionCommitMD.metadata){
+            return { status: 200, score: postTransactionCommitMD.metadata.score};
+          } else {
+            return;
+          }
         });
       } else {
         // return no action found
+        return {status: 400};
       }
     } else {
       // Return 400 or 422 in this case
-      // return 
-      console.log('Ambiguous instructions - cannot upvote and downvote at the same time');
+      return {status: 400/*,  message: 'Cannot upvote and downvote at the same time' */};
     }
   });
 }

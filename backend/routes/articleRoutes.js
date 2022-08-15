@@ -13,10 +13,6 @@ router.get('/', (req, res) => {
   res.send();
 });
 
-
-  ////////////////////////////////
-  ////////////// No voting system
-
 router.post('/create', async (req, res) => {
   const token = req.cookies.token;
   try {
@@ -28,8 +24,7 @@ router.post('/create', async (req, res) => {
   } catch (e) {
     return res.status(401).end();
   }
-  // TODO: appeler un controller pour stocker des données dans BigchainDB
-  // Ajouter gestion d'erreurs
+  // TODO: Ajouter gestion d'erreurs
   await articleController.createArticle(req.body.data, req.body.metadata).then(resp => {
     // Si la réponse est une erreur, on formatte la réponse en erreur. Sinon, success
     const response = resp.status['error']
@@ -53,8 +48,6 @@ router.post('/create', async (req, res) => {
         res.status(Number(resp.status))
         res.send()
     }) */
-  
-  
 });
 
 router.post('/search', async (req, res) => {
@@ -94,14 +87,15 @@ router.post('/score', async (req, res) =>{
   } catch (e) {
     return res.status(401).end();
   }
-  // PARSE upvote and downvote booleans, refuse when both upvate and downvote are true
-  // Va permettre de mettre à jour le score
-  await articleController.updateScore(req.body.id, req.body.actions).then(resp => {
-    // WIP IN ARTICLE CONTROLLER EDIT METADATA
+
+  await articleController.updateScore(req.body.id, req.body.actions).then(resp => {    
     const response = resp.status['error']
     ? error('Error', resp.status)
     : success('Successful', resp.status, resp.results);
     res.status(response.code);
+    if(response.code === 200){
+      response.score = resp.score;
+    }
     res.write(JSON.stringify(response));
   }).catch(err => {
     res.status(500);
@@ -109,12 +103,5 @@ router.post('/score', async (req, res) =>{
   })
   res.send();
 });
-
-
-  ////////////////////////////////////////////////
-  ////////////// Voting system protected functions
-
-
-
 
 module.exports = router;

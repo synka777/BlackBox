@@ -13,59 +13,7 @@ router.get('/', (req, res) => {
   res.send()
 })
 
-router.post('/redefine', async (req, res) => {
-  const token = req.cookies.token;
-  try {
-    const payload = utils.verifyToken(res, token);
-    if (payload.status) {
-      res.end();
-      return payload.status;
-    }
-  } catch (e) {
-    return res.status(401).end();
-  }
-  await articleController.updateArticle(metadata).then(resp => {
-    // Si la réponse est une erreur, on formatte la réponse en erreur. Sinon, success
-    const response = resp.status['error']
-    ? error(resp.message, resp.status.code)
-    : success('Successful', resp.status.code, resp.id);
-    res.status(response.code);
-    res.write(JSON.stringify(response));
-  })/* .catch(err => {
-    res.status(500);
-    res.write(JSON.stringify(err));
-  }) */
-  
-  res.send();
-});
-
-router.post('/report', async (req, res) => {
-  const token = req.cookies.token;
-  try {
-    const payload = utils.verifyToken(res, token);
-    if (payload.status) {
-      res.end();
-      return payload.status;
-    }
-  } catch (e) {
-    return res.status(401).end();
-  }
-  await articleController.updateArticle(metadata).then(resp => {
-    // Si la réponse est une erreur, on formatte la réponse en erreur. Sinon, success
-    const response = resp.status['error']
-    ? error(resp.message, resp.status.code)
-    : success('Successful', resp.status.code, resp.id);
-    res.status(response.code);
-    res.write(JSON.stringify(response));
-  })/* .catch(err => {
-    res.status(500);
-    res.write(JSON.stringify(err));
-  }) */
-  
-  res.send();
-});
-
-router.post('/trash', async (req, res) => {
+router.post('/', async (req, res) => {
   const token = req.cookies.token;
   try {
     const payload = utils.verifyToken(res, token);
@@ -77,7 +25,6 @@ router.post('/trash', async (req, res) => {
     return res.status(401).end();
   }
 
-  // TODO: replace this with an actual update function from articleController
   await voteController.processVotes(req.body).then(resp => {
     // Si la réponse est une erreur, on formatte la réponse en erreur. Sinon, success
     const response = resp.status['error']
