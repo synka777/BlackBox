@@ -17,7 +17,7 @@ module.exports.createArticle = async function(data, metadata){
 	}
 	// Makes metadata easily searchable before creating the asset
 	metadata.category = utils.translateMetadata(metadata.category, 'category');
-  console.log();
+
 	metadata.nsfw = typeof(metadata.nsfw) === 'string'
   ? utils.translateMetadata(metadata.nsfw, 'nsfw')
   : utils.translateMetadata(JSON.stringify(metadata.nsfw), 'nsfw');
