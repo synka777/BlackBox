@@ -17,7 +17,10 @@ module.exports.createArticle = async function(data, metadata){
 	}
 	// Makes metadata easily searchable before creating the asset
 	metadata.category = utils.translateMetadata(metadata.category, 'category');
-	metadata.nsfw = utils.translateMetadata(metadata.nsfw, 'nsfw');
+  console.log();
+	metadata.nsfw = typeof(metadata.nsfw) === 'string'
+  ? utils.translateMetadata(metadata.nsfw, 'nsfw')
+  : utils.translateMetadata(JSON.stringify(metadata.nsfw), 'nsfw');
 	//metadata.type = utils.translateMetadata('article', 'type');
 	return await bcDB.createNewAsset(data, metadata).then(resp => {
 		// Si la requête vers bigchainDB s'exécute correctement il n'y a pas de code de retour
@@ -36,13 +39,12 @@ module.exports.searchArticle = async function(search){
 
 	// if req.body has a property 'category', trigger a search on this category
 	if(search.category && search.category !== ('' || undefined)){
-    
+
     ////////////////////////////
     // SEARCH CATEGORY
-		
+
     const catSrchPattern = utils.translateMetadata(search.category, 'category');
 		await bcDB.searchMetadata(catSrchPattern).then(results => {
-      console.log('DEBUG Metadata by cat:', results);
 			results.map(result => {
 				if(!search.nsfw){
 
@@ -87,9 +89,8 @@ module.exports.searchArticle = async function(search){
 
       ////////////////////////////
       // ALL CATEGORIES: ONLY SFW ARTICLES
-			
+
       tempMetadata = await bcDB.searchMetadata(nsfwSrchPattern).then(metadataList => {
-        console.log('DEBUG Metadata SFW:', metadataList);
         const nsfwTruePattern = utils.translateMetadata('true','nsfw');
 				if(metadataList && metadataList.length !== 0){
           mapEntries = [];
@@ -111,7 +112,6 @@ module.exports.searchArticle = async function(search){
 			// else, search for all data as we won't return only NSFW results.
       // we still pass on "nsfw == false" as we want the safe content to be displayed first
 			tempMetadata = await bcDB.searchMetadata(nsfwSrchPattern).then(metadataList => {
-        console.log('DEBUG Metadata w/ NSFW:', metadataList);
         // and we won't use the strict matching here as we also want NSFW results to be in the result list.
 				return  metadataList.map(result => {
           result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
@@ -183,7 +183,6 @@ module.exports.searchArticle = async function(search){
   const assetResults = await Promise.all(tetheredMd.map(async mdObj => {
     if(!mdObj){ return; }
     return await bcDB.searchAssets(mdObj.orig.id).then(asset => {
-      console.log('DEBUG Asset:', asset);
       // if the request body includes a search keyword,  
       if(search.keyword && search.keyword !== ('' || undefined)){
         // only returns the asset if it includes the search
@@ -211,7 +210,6 @@ module.exports.searchArticle = async function(search){
         }
       } else { // TODO: refactor this property ordering in a function
         // else if no keyword, just return the asset
-        console.log('DEBUG mdObj:', mdObj);
         asset = asset[0];
         asset.metadata = mdObj.latest.metadata;
         return { 
@@ -230,8 +228,8 @@ module.exports.searchArticle = async function(search){
       return entry;
     }
   });
-  if( results.length === 0){ return {status: 404}; }
-  return { status: 200, results};
+  if(results.length === 0){ return { status: 404 }; }
+  return { status: 200, results };
 }
 
 // This function will update the score without using any voting mechanism
@@ -243,7 +241,7 @@ module.exports.updateScore = async function(tetherId, actions){
   return bcDB.searchMetadata(tetherId).then(results => {
     // if nothing is found with the given tetherId, return status 404
     if(results.length === 0){
-      return {status: 404};
+      return { status: 404 };
     }
 
     const latestMd = utils.getMostRecent(results);
@@ -269,25 +267,19 @@ module.exports.updateScore = async function(tetherId, actions){
         });
       } else {
         // return no action found
-        return {status: 400};
+        return { status: 400 };
       }
     } else {
       // Return 400 or 422 in this case
-      return {status: 400/*,  message: 'Cannot upvote and downvote at the same time' */};
+      return { status: 400/*,  message: 'Cannot upvote and downvote at the same time' */ };
     }
   });
 }
 
 module.exports.updateArticle = async (id, metadata) => {
-    bcDB.editArticleMetaData(id, metadata).then(postTransactionCommitMD => {
+    return bcDB.editArticleMetaData(id, metadata).then(postTransactionCommitMD => {
     // TODO: Handle errors from bcDB func here
-    // See how to return this info to the client
-    console.log('New metadata state', postTransactionCommitMD.metadata);
-    return postTransactionCommitMD
-    /* Not really useful if I just want to return the new metadata id
-    bcDB.conn.getTransaction(test.id).then(test2 => {
-      console.log('Can I get a tx with this new ID?', test2);
-    }) */
-    
+    console.log('Updated metadata for article', metadata.tetherId+':', postTransactionCommitMD.metadata);
+    return postTransactionCommitMD.metadata;    
   });
 }

@@ -92,10 +92,10 @@ router.post('/score', async (req, res) =>{
     const response = resp.status['error']
     ? error('Error', resp.status)
     : success('Successful', resp.status, resp.results);
-    res.status(response.code);
     if(response.code === 200){
       response.score = resp.score;
     }
+    res.status(response.code);
     res.write(JSON.stringify(response));
   }).catch(err => {
     res.status(500);
