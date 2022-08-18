@@ -1,65 +1,109 @@
 const execSync = require('child_process').execSync;
 const os = require('os');
 
-const execAndCheck = (command, pattern) => {
+////////////////////////////
+////////////// Functions
+
+/* const execAndCheck = (command, pattern) => {
   const output = execSync(command, { encoding: 'utf-8' });
   return output.includes(pattern) ? true : output;
+} */
+
+const execAndCheck = (command, pattern) => {
+  const output = execSync(command, { encoding: 'utf-8' });
+  return output.includes(pattern) ? true : false;
 }
 
-const pullCommand = 'docker pull bigchaindb/bigchaindb:all-in-one';
-const shaExpected = 'sha256:ea3975fef58a75501fe5ced712d324570ded374b592993362a206fe95314f1c1';
-const pullResult = execAndCheck(pullCommand, shaExpected);
+const pullImage = () => {
+  const pullCommand = 'docker pull bigchaindb/bigchaindb:all-in-one';
+  const expectedSHA = 'sha256:ea3975fef58a75501fe5ced712d324570ded374b592993362a206fe95314f1c1';
+  return execAndCheck(pullCommand, expectedSHA);
+};
 
-// Pulls the bigchaindb image and checks the result
-if(pullResult === true){
-  console.log('INFO: Image successfully pulled/updated');
-  
+const imageExists = () => {
   const imageListCmd = 'docker images';
   const image = 'bigchaindb/bigchaindb';
-  const isListed = execAndCheck(imageListCmd, image);
+  return execAndCheck(imageListCmd, image);
+};
 
-  // If the docker image is listed,
-  if(isListed === true){
-    console.log('INFO: Image found in the docker images list');
-    
-    // Creates a container with port forwarding and volume mapping
-      const runCmd = os.platform() === 'win32' ? 'cmd.exe /C .\\startContainer.bat' : './startContainer.sh';
-      const existsMsg = `"/bigchaindb" is already in use`;
-      let alreadyExists;
-      try{
-        alreadyExists = execAndCheck(runCmd, existsMsg);
-      }catch(e){
-        if(e.toString().includes(existsMsg)){
-          alreadyExists = true;
-        }
-      }
+const containerListed = () => {
+  const containerListCmd = 'docker ps -a --filter "status=exited" --filter "status=created"';
+  const containerName = 'bigchaindb';
+  return execAndCheck(containerListCmd, containerName);
+};
 
-      // If there is a conflict, then we just start the existing one.
-      if(alreadyExists === true){
-        console.log('INFO: Container already exists');
+const createStartContainerSuccessful = () => {
+  const runCmd = os.platform() === 'win32' ? 'cmd.exe /C .\\startContainer.bat' : './startContainer.sh';
+  const existsMsg = `"/bigchaindb" is already in use`;
+  return execAndCheck(runCmd, existsMsg) ? false : true;
+};
 
-        const startCmd = 'docker start bigchaindb';
-        const startOutput = execSync(startCmd, { encoding: 'utf-8' });
+const startContainer = () => {
+  const startCmd = 'docker start bigchaindb';
+  const startOutput = execSync(startCmd, { encoding: 'utf-8' });
+  return startOutput.includes('bigchaindb') ? true : false;
+};
 
-        if(startOutput.includes('bigchaindb')){
-            console.log('INFO: BigchainDB container running! Success!');
-        }else{
-          console.log('ERR: Cannot run the existing container:', startOutput);
-        }
-      } else {
-        const checkRunCmd = 'docker ps';
-        const imgName = 'bigchaindb/bigchaindb:all-in-one';
-        const isRunning = execAndCheck(checkRunCmd, imgName);
-        if(isRunning === true){
-          console.log('INFO: First run for BigchainDB container: Success!');
-        }else{
-          console.log('ERROR: BigchainDB container not started');
+const isRunning = () => {
+  const checkRunCmd = 'docker ps';
+  const imgName = 'bigchaindb/bigchaindb:all-in-one';
+  return execAndCheck(checkRunCmd, imgName);
+};
+
+////////////////////////////
+////////////// STEP 1: docker image
+
+let proceedToContainer = false;
+
+if(!imageExists()){
+  console.log('INFO: Image not found locally, pulling...');
+  if(pullImage()){
+    console.log('INFO: Image successfully pulled');
+    if(imageExists()){
+      console.log('INFO: Image found locally, moving to next steps');
+      proceedToContainer = true;
+    } else {
+      console.log('ERR: A problem occured after the pull operation');
+    }
+  } else {
+    console.log('ERR: Image not correctly pulled', pullResult);
+  }
+} else {
+  console.log('INFO: Image found locally, moving to next steps');
+  proceedToContainer = true;
+}
+
+////////////////////////////
+////////////// STEP 2: docker container
+
+if(proceedToContainer){
+  if(isRunning()){
+    console.log('INFO: OK - Container already running');
+    console.log('Happy coding! 🚀');
+  } else {
+    if(containerListed()){
+      console.log('INFO: Container found');
+      if(startContainer()){
+        console.log('INFO: Check 1/2 - Container started')
+        if(isRunning()){
+          console.log('INFO: Check 2/2 - BigchainDB container running: Success!');
+        } else {
+          console.log('ERR: Check 2/2 - Cannot run the existing container');
         }
       }
     } else {
-      console.log('ERR: Image not found locally', isListed);
+      console.log('INFO: Container not found');
+      if(createStartContainerSuccessful()){
+        console.log('INFO: Check 1/2 - Container setup completed')
+        if(isRunning()){
+          console.log('INFO: Check 2/2 - First run for BigchainDB container: Success!');
+          console.log('Happy coding! 🚀');
+        } else {
+          console.log('ERR: Check 2/2 - The BigchainDB container is NOT running');
+        }
+      } else {
+        console.log('ERR: A problem occured during the container creation')
+      }
     }
-} else {
-  console.log('ERR: Image not correctly pulled', pullResult);
+  }
 }
-
