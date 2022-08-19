@@ -23,7 +23,7 @@ module.exports.processVotes = async (request) => {
           resp.category = utils.translateMetadata(resp.category, 'category');
           resp.nsfw = utils.boolean(utils.translateMetadata(resp.nsfw, 'nsfw'));
           resp.votes.categories.map(category => category.name = utils.translateMetadata(category.name, 'category'));
-          return { status: 200, metadata: resp };
+          return { status: 200, result: resp };
         } else {
           return;
         }

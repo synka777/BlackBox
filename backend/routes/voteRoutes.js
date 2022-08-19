@@ -29,10 +29,7 @@ router.post('/', async (req, res) => {
   await voteController.processVotes(req.body).then(resp => {
     const response = resp.status['error']
     ? error(resp.message, resp.status)
-    : success('Successful', resp.status, resp.id);
-    if(resp.metadata){
-      response.metadata = resp.metadata;
-    }
+    : success('Successful', resp.status, resp.result);
     res.status(response.code);
     res.write(JSON.stringify(response));
   }).catch(err => {

@@ -260,7 +260,10 @@ module.exports.updateScore = async function(tetherId, actions){
         return bcDB.editArticleMetaData(latestMd.id, latestMd.metadata).then(postTransactionCommitMD => {
           console.log('Updated score for article', tetherId+':', postTransactionCommitMD.metadata.score);
           if(postTransactionCommitMD.metadata){
-            return { status: 200, score: postTransactionCommitMD.metadata.score};
+            postTransactionCommitMD.metadata.category = utils.translateMetadata(postTransactionCommitMD.metadata.category, 'category');
+            postTransactionCommitMD.metadata.nsfw = utils.boolean(utils.translateMetadata(postTransactionCommitMD.metadata.nsfw, 'nsfw'));
+            postTransactionCommitMD.metadata.votes.categories.map(category => category.name = utils.translateMetadata(category.name, 'category'));
+            return { status: 200, results: postTransactionCommitMD.metadata};
           } else {
             return;
           }

@@ -81,6 +81,8 @@ Remarques:
 - Un champ date est ajouté automatiquement lors de l'écriture de l'article en base de données.
 - Un id (tetherId) permettant de lier les données et métadonnées d'article est également ajouté.
 
+Cet endpoint retourne l'article qui vient d'être créé en guise de réponse.
+
 | Endpoint  | localhost:9229/article/create/ |
 | ------------ | ------------ |
 | Méthode  |  POST |
@@ -102,9 +104,16 @@ Remarques:
 
 La recherche d'articles peut se faire:
 - sans aucun paramètre (= get all articles)
-- avec un terme de recherche (keyword)
+- avec un terme de recherche, sensible à la casse (keyword)
 - par catégorie d'articles
 - en incluant les résultats de recherche pouvant inclure des résultats choquants ou non (nsfw)
+
+Dans le cas où on effectue une recherche avec le flag nsfw à true, la recherche retournera:
+- des résultats choquants (Not Safe For Work)
+- des résultats non choquants
+
+L'intérêt du flag nsfw est de spécifier si on souhaite que les résultats choquants soient inclus dans les réponses.
+Passer ce flag à true ne permettra donc pas d'obtenir une liste de résultats choquants uniquement.
 
 | Endpoint  | localhost:9229/article/search/  |
 | ------------ | ------------ |
@@ -125,6 +134,8 @@ Pour ce faire, il suffit d'effectuer une recherche pour obtenir ce tetherId ou b
 
 Les actions permettent de définir si on souhaite augmenter le score d'un article ou le baisser (un peu comme le système de Reddit).
 Les clés possibles dans les actions sont 'upvote' et 'downvote', et ces deux clés doivent avoir des valeurs différentes. Les valeurs de ces clés sont de type booléen.
+
+Cet endpoint retourne les métadonnées à jour en guise de réponse.
 
 | Endpoint  | localhost:9229/article/score/  |
 | ------------ | ------------ |
@@ -150,6 +161,8 @@ Les actions en question sont:
 - Signalement d'un article comme contenu sensible (via le flag nsfw)
 
 Les seuils à atteindre pour les votes sont réglables dans le fichier .env qui devra être présent à la racine du projet backend.
+
+Cet endpoint retourne les métadonnées à jour en guise de réponse.
 
 | Endpoint  | localhost:9229/vote/  |
 | ------------ | ------------ |
