@@ -57,18 +57,18 @@ module.exports.searchArticle = async function(search){
 						// ensures the result is a strict match
 						if(utils.matches(result.metadata.category, catSrchPattern)){
 							result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
-							result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
+							result.metadata.nsfw = utils.boolean(utils.translateMetadata(result.metadata.nsfw, 'nsfw'));
 							metadataResults.push(result)
 						}
 					}
-				}else{ // else just add everyting that strictly matches the search
+				} else { // else just add everyting that strictly matches the search
 
           ////////////////////////////
           // SEARCH CATEGORY: NSFW ARTICLES INCLUDED
 
 					if(utils.matches(result.metadata.category, catSrchPattern)){
 						result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
-						result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
+						result.metadata.nsfw = utils.boolean(utils.translateMetadata(result.metadata.nsfw, 'nsfw'));
 						metadataResults.push(result);
 					}
 				}
@@ -97,7 +97,7 @@ module.exports.searchArticle = async function(search){
           metadataList.map(result => {
             if(!utils.matches(result.metadata.nsfw, nsfwTruePattern)){
               result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
-              result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
+              result.metadata.nsfw = utils.boolean(utils.translateMetadata(result.metadata.nsfw, 'nsfw'));
               mapEntries.push(result);
             }
           });
@@ -115,7 +115,7 @@ module.exports.searchArticle = async function(search){
         // and we won't use the strict matching here as we also want NSFW results to be in the result list.
 				return  metadataList.map(result => {
           result.metadata.category = utils.translateMetadata(result.metadata.category, 'category');
-          result.metadata.nsfw = utils.translateMetadata(result.metadata.nsfw, 'nsfw');
+          result.metadata.nsfw = utils.boolean(utils.translateMetadata(result.metadata.nsfw, 'nsfw'));
           return result;
         });
 			})
@@ -141,7 +141,7 @@ module.exports.searchArticle = async function(search){
     return bcDB.searchMetadata(tetherId).then(tetherIdResults => {
       const latestMetadata = utils.getMostRecent(tetherIdResults);
       latestMetadata.metadata.category = utils.translateMetadata(latestMetadata.metadata.category, 'category'); 
-      latestMetadata.metadata.nsfw = utils.translateMetadata(latestMetadata.metadata.nsfw, 'nsfw');
+      latestMetadata.metadata.nsfw = utils.boolean(utils.translateMetadata(latestMetadata.metadata.nsfw, 'nsfw'));
 
       // If the metadata are actually up-to-date, keep it for further processing
       if(latestMetadata.metadata.date === assumedLatest.metadata.date ){
@@ -236,8 +236,8 @@ module.exports.searchArticle = async function(search){
 module.exports.updateScore = async function(tetherId, actions){
   // Search by tetherId and only keep the most recent result.
   // We can't search for the assetId as the bigchainDB TRANSFER generates a new metadata ID
-  // that doesn't match anything. The tetherId is there to link assett and metadata,
-  // but it also allows us to search for all metadata for a given asset.
+  // that doesn't match anything. The tetherId is there to link data with it's metadata,
+  // so it allows us to search for all metadata for a given asset.
   return bcDB.searchMetadata(tetherId).then(results => {
     // if nothing is found with the given tetherId, return status 404
     if(results.length === 0){

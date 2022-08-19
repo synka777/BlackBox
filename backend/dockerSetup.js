@@ -4,11 +4,6 @@ const os = require('os');
 ////////////////////////////
 ////////////// Functions
 
-/* const execAndCheck = (command, pattern) => {
-  const output = execSync(command, { encoding: 'utf-8' });
-  return output.includes(pattern) ? true : output;
-} */
-
 const execAndCheck = (command, pattern) => {
   const output = execSync(command, { encoding: 'utf-8' });
   return output.includes(pattern) ? true : false;
@@ -87,6 +82,7 @@ if(proceedToContainer){
         console.log('INFO: Check 1/2 - Container started')
         if(isRunning()){
           console.log('INFO: Check 2/2 - BigchainDB container running: Success!');
+          console.log('Happy coding! 🚀');
         } else {
           console.log('ERR: Check 2/2 - Cannot run the existing container');
         }

@@ -27,9 +27,16 @@ router.post('/create', async (req, res) => {
   // TODO: Ajouter gestion d'erreurs
   await articleController.createArticle(req.body.data, req.body.metadata).then(resp => {
     // Si la réponse est une erreur, on formatte la réponse en erreur. Sinon, success
+    const result = {};
+    result.id = resp.id ? resp.id : undefined;
+    result.data = resp.asset.data ? resp.asset.data : undefined;
+    result.metadata = resp.metadata ? resp.metadata : undefined;
+    result.metadata.category = resp.metadata.category ? utils.translateMetadata(resp.metadata.category, 'category') : undefined;
+    result.metadata.nsfw = resp.metadata.nsfw ? utils.boolean(utils.translateMetadata(resp.metadata.nsfw, 'nsfw')) : undefined;
     const response = resp.status['error']
     ? error(resp.message, resp.status.code)
-    : success('Successful', resp.status.code, resp.id);
+    : success('Successful', resp.status.code, result);
+
     res.status(response.code);
     res.write(JSON.stringify(response));
   })/* .catch(err => {
@@ -88,7 +95,7 @@ router.post('/score', async (req, res) =>{
     return res.status(401).end();
   }
 
-  await articleController.updateScore(req.body.id, req.body.actions).then(resp => {    
+  await articleController.updateScore(req.body.tetherId, req.body.actions).then(resp => {    
     const response = resp.status['error']
     ? error('Error', resp.status)
     : success('Successful', resp.status, resp.results);

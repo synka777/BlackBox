@@ -17,7 +17,12 @@ module.exports.processVotes = async (request) => {
       const metadata = getNewMetadata(oldMd);
       // STEP 3: UPDATE THE ARTICLE
       return articleController.updateArticle(oldMd.id, metadata).then(resp => {
+        
         if(resp){
+          // reformat category and nsfw flags to a humanly readable format, then return the response
+          resp.category = utils.translateMetadata(resp.category, 'category');
+          resp.nsfw = utils.boolean(utils.translateMetadata(resp.nsfw, 'nsfw'));
+          resp.votes.categories.map(category => category.name = utils.translateMetadata(category.name, 'category'));
           return { status: 200, metadata: resp };
         } else {
           return;

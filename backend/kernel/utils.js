@@ -6,8 +6,9 @@ const { stringify } = require('nodemon/lib/utils');
 
 module.exports.jwtKey = 'my_secret_key';
 
-  ////////////////////////////
-  ////////////// Token
+////////////////////////////
+////////////// Token
+
 module.exports.verifyToken = (res, token) => {
   try {
     return jwt.verify(token, this.jwtKey);
@@ -19,16 +20,16 @@ module.exports.verifyToken = (res, token) => {
   }
 };
 
-  ////////////////////////////
-  ////////////// Transactions
+////////////////////////////
+////////////// Transactions
 
 /* module.exports.bcDB = () => {
   console.log('giving access to bcdb utils')
   return bigchainDB;
 } */
 
-  ////////////////////////////
-  ////////////// Misc
+////////////////////////////
+////////////// Misc
 
 module.exports.getModelProperties = (modelName, exclusions) => {
   const newModel = mongoose.model(modelName);
@@ -39,7 +40,7 @@ module.exports.getModelProperties = (modelName, exclusions) => {
   });
 };
 
-  // Sert à découper une string de status en code de retour HTTP avec son message associé
+// Sert à découper une string de status en code de retour HTTP avec son message associé
 module.exports.parseStatus = (string) => {
   const status = { 'code': null, 'error': false, 'detail': null};
   if(!string.match('20[01]')){ status.error = true }
@@ -135,4 +136,8 @@ module.exports.getOG = (metadataList) => {
     (prev, next) => new Date(prev.metadata.date) - new Date(next.metadata.date)
   );
   return sortedList[0];
-} 
+}
+
+module.exports.boolean = (value) =>  {
+  return value === 'true' ? true : false;
+}
