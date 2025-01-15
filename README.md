@@ -1,85 +1,84 @@
 # ⬛ Blackbox API
 
-Ce projet a été réalisé dans le cadre d'une L3 21-22 en développement au sein de l'Estiam.
+This project was developed as part of an L3 21-22 program in development at Estiam.
 
-### Qu'est que c'est exactement?
-Dans son état actuel, ce projet permet de consulter et poster des articles texte ou HTML.
+### What is it exactly?
+In its current state, this project allows users to view and post text or HTML articles.
 
-### En quoi c'est innovant?
-L'innovation se trouve dans le fait que les articles qui seront postés par les utilisateurs seront modérés par les utilisateurs eux-mêmes. Il n'y a pas d'accès administrateur, et la suppression d'articles est impossible.
+### What makes it innovative?
+The innovation lies in the fact that articles posted by users are moderated by the users themselves. There is no administrator access, and article deletion is impossible.
 
-### Le but derrière ce projet
-Le but de ce projet est donc d'avoir une première approche sur l'utilisation de nouvelles technologies permettant d'implémenter le concept du permaweb dans un projet, la protection des données, etc.
-Le concept est de mettre à disposition des utilitateurs un site/application mobile qui permette de poster du contenu (Ex: Twitter, Reddit) avec une garantie que l'information qui sera postée ne pourra jamais être supprimée.
+### The goal behind this project
+The aim of this project is to gain initial exposure to using new technologies to implement the concept of the permaweb in a project, ensure data protection, etc.  
+The idea is to provide users with a site or mobile application that enables them to post content (e.g., Twitter, Reddit) with the guarantee that the information posted cannot ever be deleted.
 
 ____
 
-## ⚠️ Les prérequis
-Avant de commencer, il faut s'assurer d'avoir les prérequis suivants:
-- Node.js installé en version stable ou en dernière version
-- Docker installé et lancé, avec la ligne de commandes activée
-- Le fichier .env doit être à la racine du dossier backend/
-
+## ⚠️ Prerequisites
+Before starting, ensure you have the following prerequisites:
+- Node.js installed in a stable or latest version
+- Docker installed and running, with command-line access enabled
+- The `.env` file must be located in the root of the backend directory
 
 ## 🚀 Quickstart
 ____
 
-## 1 - Démarrage de l'API
+## 1 - Starting the API
 
-Pour pouvoir commencer à l'utiliser, trois étapes:
+To start using it, follow these three steps:
 
-#### ETAPE 1:  Préparation de l'environnement.
+#### STEP 1: Environment preparation
 
-Installation des packages:
+Install the packages:
 ```
 npm install
 ```
 
-Préparation du conteneur:
+Prepare the container:
 ```
 npm run setup
 ```
-Cette commande **télécharge docker et lance le conteneur bigchaindb**, qui va répondre aux requêtes de stockage créées par le frontend (ou postman).
+This command **downloads Docker and launches the BigchainDB container**, which will respond to storage requests made by the frontend (or Postman).  
+If this command has already been executed, it will simply start the existing BigchainDB container on the machine.
 
-Dans le cas où cette commande a déjà été exécutée, elle se contentera de lancer le conteneur bigchaindb existant sur la machine.
+#### STEP 2: Start the backend
+Once the previous step is complete, start the project:
 
-#### ETAPE 2: Lancement du backend
-Une fois que l'étape précédente est validée, on lance le projet:
 ```
 npm run start
 ```
-Notez, la commande échouera si:
-- Le conteneur docker ne tourne pas
-- Le fichier .env est manquant
+Note: This command will fail if:
+- The Docker container is not running
+- The `.env` file is missing
 
-#### ETAPE 3: Création de données d'exemple pour faire fonctionner le projet
-A défaut de pouvoir importer des données d'exemples, pour le moment il faudra importer la collection de requêtes dans postman et utiliser les endpoints de création d'articles et autres resources. (il n'y a que des articles pour le moment)
+#### STEP 3: Create sample data to use the project
+For now, sample data must be imported manually. Import the request collection into Postman and use the endpoints for creating articles and other resources (currently, only articles are supported).
 
-## ⚠ Remarques
-Les données que vous créerez ne seront pas perdues tant que:
-- vous ne supprimez pas docker de votre machine
-- vous ne supprimez pas les volumes docker qui étaient rattachés à bigchaindb
+## ⚠ Notes
+The data you create will not be lost as long as:
+- You do not uninstall Docker from your machine
+- You do not delete the Docker volumes attached to BigchainDB
 
 ⠀
 __________________________
-## 2 - Interaction avec l'API
+## 2 - Interacting with the API
 
-### ⚠️ Prérequis: génération de token à utiliser avec les requêtes
+### ⚠️ Prerequisite: Token generation for requests
 
-Avant de commencer à intéragir avec l'API il faudra générer un token en passant en body un username de type string.
+Before interacting with the API, you need to generate a token by sending a username as a string in the request body.  
+The response will provide a token, which is automatically stored in Postman's cookies.
 
-Une réponse nous donne alors un token, qui est automatiquement stocké dans les cookies de postman.
+Example:
 
-Exemple:
 ```
 token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkJyYXZlIFBsYXR5cHVzIiwiaWF0IjoxNjYwODI4ODU1LCJleHAiOjE2NjA4Mzc4NTV9.Q3g3dRbpEUSgu1WrfZhAHwx6eMQ0L2ea_pemb8FuVlc; Path=/; Expires=Thu, 18 Aug 2022 15:50:55 GMT;
 ```
 
-Pour réaliser les requêtes sans postman via un client de requêtes HTTP, il faudra ajouer le token dans les cookies manuellement.
+To make requests without Postman via an HTTP client, manually add the token to the cookies.
 
 | Endpoint  | localhost:9229/token/generate/  |
 | ------------ | ------------ |
-| Méthode  |  POST |
+| Method  |  POST |
 
 ```
 {
@@ -87,18 +86,19 @@ Pour réaliser les requêtes sans postman via un client de requêtes HTTP, il fa
 }
 ```
 ⠀
-### 🔨 Création d'articles
+### 🔨 Creating Articles
 
-La création d'articles se fait simplement avec le format d'objet suivant.
-Remarques:
-- Un champ date est ajouté automatiquement lors de l'écriture de l'article en base de données.
-- Un id (tetherId) permettant de lier les données et métadonnées d'article est également ajouté.
+Creating articles is simple using the following object format.  
+Notes:
+- A `date` field is automatically added when the article is written to the database.
+- An `id` (tetherId) to link article data and metadata is also added.
 
-Cet endpoint retourne l'article qui vient d'être créé en guise de réponse.
+This endpoint returns the newly created article as the response.
 
 | Endpoint  | localhost:9229/article/create/ |
 | ------------ | ------------ |
-| Méthode  |  POST |
+| Method  |  POST |
+
 ```
 {
     "data": {
@@ -113,24 +113,26 @@ Cet endpoint retourne l'article qui vient d'être créé en guise de réponse.
 }
 ```
 ⠀
-### 🔍 Recherche d'articles
+### 🔍 Searching Articles
 
-La recherche d'articles peut se faire:
-- sans aucun paramètre (= get all articles)
-- avec un terme de recherche, sensible à la casse (keyword)
-- par catégorie d'articles
-- en incluant les résultats de recherche pouvant inclure des résultats choquants ou non (nsfw)
+Articles can be searched:
+- Without any parameters (= get all articles)
+- By a case-sensitive keyword
+- By article category
+- By including or excluding NSFW results
 
-Dans le cas où on effectue une recherche avec le flag nsfw à true, la recherche retournera:
-- des résultats choquants (Not Safe For Work)
-- des résultats non choquants
+If the search includes the `nsfw` flag set to true, the results will include:
+- NSFW content (Not Safe For Work)
+- Non-NSFW content
 
-L'intérêt du flag nsfw est de spécifier si on souhaite que les résultats choquants soient inclus dans les réponses.
-Passer ce flag à true ne permettra donc pas d'obtenir une liste de résultats choquants uniquement.
+The purpose of the `nsfw` flag is to specify whether NSFW results should be included in the response.  
+Setting this flag to true does not return only NSFW results.
 
 | Endpoint  | localhost:9229/article/search/  |
 | ------------ | ------------ |
-| Méthode  |  POST |
+| Method  |  POST |
+
+
 
 ```
 {
@@ -140,19 +142,20 @@ Passer ce flag à true ne permettra donc pas d'obtenir une liste de résultats c
 }
 ```
 ⠀
-### ⬆️ Mise à jour du score d'articles
+### ⬆️ Updating Article Scores
 
-Pour mettre à jour un article donné, il faut connaître son tetherId.
-Pour ce faire, il suffit d'effectuer une recherche pour obtenir ce tetherId ou bien le récupérer dans la réponse de la création de l'article en question.
+To update a specific article, you need its `tetherId`.  
+You can retrieve the `tetherId` by performing a search or getting it from the article creation response.
 
-Les actions permettent de définir si on souhaite augmenter le score d'un article ou le baisser (un peu comme le système de Reddit).
-Les clés possibles dans les actions sont 'upvote' et 'downvote', et ces deux clés doivent avoir des valeurs différentes. Les valeurs de ces clés sont de type booléen.
+The actions indicate whether to upvote or downvote an article (similar to Reddit).  
+Possible action keys are `upvote` and `downvote`, and these keys must have different values (boolean type).
 
-Cet endpoint retourne les métadonnées à jour en guise de réponse.
+This endpoint returns the updated metadata as the response.
 
 | Endpoint  | localhost:9229/article/score/  |
 | ------------ | ------------ |
-| Méthode  |  POST |
+| Method  |  POST |
+
 ```
 {
     "tetherId":"jrbq8NH3i",
@@ -163,23 +166,24 @@ Cet endpoint retourne les métadonnées à jour en guise de réponse.
 }
 ```
 ⠀
-### 🗳️ Soumission de vote pour modification de métadonnées d'article
+### 🗳️ Voting to Modify Article Metadata
 
-La gestion des articles se faisant de manière communautaire sans aucun administrateur, super utilisateur ou gérant, seule la modification du score d'article peut se faire par l'action d'un utilisateur unique.
+Since articles are managed collectively without administrators, superusers, or managers, only article score updates can be made by a single user.  
+Other actions require a voting system to ensure that requested changes are legitimate and validated by the community.
 
-Les autres actions sont soumises à un système de votes, pour s'assurer que les modifications demandées sont bien légitimes et validées par la communauté.
-Les actions en question sont:
-- Changement de la catégorie d'un article, dans le cas où il aurait été mal classé à sa création
-- Mise en corbeille d'un article (via le flag 'trash')
-- Signalement d'un article comme contenu sensible (via le flag nsfw)
+Actions include:
+- Changing an article's category if it was misclassified at creation
+- Marking an article for deletion (via the `trash` flag)
+- Flagging an article as sensitive content (via the `nsfw` flag)
 
-Les seuils à atteindre pour les votes sont réglables dans le fichier .env qui devra être présent à la racine du projet backend.
+Voting thresholds can be configured in the `.env` file, which must be located in the root of the backend project.
 
-Cet endpoint retourne les métadonnées à jour en guise de réponse.
+This endpoint returns the updated metadata as the response.
 
 | Endpoint  | localhost:9229/vote/  |
 | ------------ | ------------ |
-| Méthode  |  POST |
+| Method  |  POST |
+
 ```
 {
     "tetherId":"jrbq8NH3i",
