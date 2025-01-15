@@ -10,7 +10,7 @@ The innovation lies in the fact that articles posted by users are moderated by t
 
 ### The goal behind this project
 The aim of this project is to gain initial exposure to using new technologies to implement the concept of the permaweb in a project, ensure data protection, etc.  
-The idea is to provide users with a site or mobile application that enables them to post content (e.g., Twitter, Reddit) with the guarantee that the information posted cannot ever be deleted.
+The idea is to provide developers with a backend that enables them to post content with the guarantee that the information posted cannot ever be deleted. To be used wihen developing mobile apps.
 
 ____
 
